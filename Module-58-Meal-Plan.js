@@ -508,11 +508,326 @@ class TruePrecisionEngine {
   }
 }
 
-// HTML Generator remains the same but with updated branding
+// HTML Generator with Professional Responsive Design
 function generatePrecisionHTML(meals, targets, userData) {
-  // [Rest of HTML generation code remains the same...]
-  // This is a large function, keeping it as is for now
-  return `<!-- HTML generation would go here -->`;
+  const methodology = targets.methodology || 'moderate';
+  const phase = targets.phase || '';
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${userData.first_name}'s Personalized Meal Plan - Stephanie Sanzo Nutrition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header h2 {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .methodology-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-top: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .targets-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .targets-title {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .macro-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .macro-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .macro-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .macro-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .meals-section {
+            margin-top: 30px;
+        }
+        
+        .meal-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .meal-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+        
+        .meal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .meal-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .meal-totals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .meal-total {
+            background: rgba(255,255,255,0.2);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .meal-foods {
+            padding: 20px;
+        }
+        
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .food-item:last-child {
+            border-bottom: none;
+        }
+        
+        .food-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .food-amount {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .food-calories {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+        }
+        
+        .branding {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .macro-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .meal-totals {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .food-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>${userData.first_name} ${userData.last_name}</h1>
+            <h2>Your Personalized Nutrition Plan</h2>
+            ${methodology === 'shelby-justin' ? 
+                `<div class="methodology-badge">EXTREME CARB CYCLING ${phase ? `• ${phase}` : ''}</div>` :
+                `<div class="methodology-badge">PRECISION NUTRITION SYSTEM</div>`
+            }
+        </div>
+        
+        <div class="content">
+            <div class="targets-section">
+                <div class="targets-title">🎯 Your Daily Targets</div>
+                <div class="macro-grid">
+                    <div class="macro-card">
+                        <div class="macro-value">${targets.calories}</div>
+                        <div class="macro-label">Calories</div>
+                    </div>
+                    <div class="macro-card">
+                        <div class="macro-value">${targets.protein}g</div>
+                        <div class="macro-label">Protein</div>
+                    </div>
+                    <div class="macro-card">
+                        <div class="macro-value">${targets.carbs}g</div>
+                        <div class="macro-label">Carbs</div>
+                    </div>
+                    <div class="macro-card">
+                        <div class="macro-value">${targets.fat}g</div>
+                        <div class="macro-label">Fat</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="meals-section">
+                ${meals.map((meal, index) => `
+                    <div class="meal-card">
+                        <div class="meal-header">
+                            <div class="meal-name">${meal.name}</div>
+                            <div class="meal-totals">
+                                <div class="meal-total">
+                                    <div>${Math.round(meal.totals.calories)}</div>
+                                    <div>cals</div>
+                                </div>
+                                <div class="meal-total">
+                                    <div>${Math.round(meal.totals.protein)}g</div>
+                                    <div>protein</div>
+                                </div>
+                                <div class="meal-total">
+                                    <div>${Math.round(meal.totals.carbs)}g</div>
+                                    <div>carbs</div>
+                                </div>
+                                <div class="meal-total">
+                                    <div>${Math.round(meal.totals.fats)}g</div>
+                                    <div>fat</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="meal-foods">
+                            ${meal.components.map(food => `
+                                <div class="food-item">
+                                    <div>
+                                        <div class="food-name">${food.name}</div>
+                                        <div class="food-amount">${food.amount}</div>
+                                    </div>
+                                    <div class="food-calories">${food.calories} cal</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong class="branding">Stephanie Sanzo Nutrition</strong></p>
+            <p>World-class personalized nutrition • Precision engineered for your goals</p>
+            <p>Generated with mathematical precision: ±25 calorie tolerance</p>
+        </div>
+    </div>
+</body>
+</html>`;
 }
 
 // Main function - Precision Meal Plan Generation

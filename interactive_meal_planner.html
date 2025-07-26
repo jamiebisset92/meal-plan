@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stephanie Sanzo - Interactive Meal Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6741 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.2);
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: #27ae60;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .calendar-strip {
+            display: flex;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            overflow-x: auto;
+            gap: 10px;
+        }
+
+        .day-tab {
+            min-width: 70px;
+            padding: 12px 8px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .day-tab.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .day-tab.training {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .day-tab.rest {
+            border-left: 4px solid #3498db;
+        }
+
+        .day-tab.refeed {
+            border-left: 4px solid #f39c12;
+        }
+
+        .day-name {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .day-type {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .calories-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .calories-main {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .calories-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .macros-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px;
+        }
+
+        .macro-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .macro-value {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .macro-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .protein { color: #e74c3c; }
+        .carbs { color: #3498db; }
+        .fats { color: #f39c12; }
+
+        .meals-section {
+            margin: 15px;
+        }
+
+        .meal-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+
+        .meal-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .meal-title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .meal-calories {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .meal-body {
+            padding: 15px;
+        }
+
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .food-item:last-child {
+            border-bottom: none;
+        }
+
+        .food-info {
+            flex: 1;
+        }
+
+        .food-name {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .food-amount {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .food-macros {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .check-button {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #e9ecef;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+
+        .check-button.checked {
+            background: #27ae60;
+            border-color: #27ae60;
+            color: white;
+        }
+
+        .check-button:hover {
+            transform: scale(1.1);
+        }
+
+        .swap-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .swap-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .water-tracker {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .water-circles {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .water-circle {
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .water-circle.filled {
+            background: white;
+            border-color: white;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 414px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 5px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .content-padding {
+            padding-bottom: 80px;
+        }
+
+        @media (max-width: 430px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            .macros-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .macro-card {
+                padding: 12px;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Your Meal Plan</h1>
+            <div class="subtitle">By Stephanie Sanzo</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="calendar-strip">
+            <div class="day-tab training active" data-day="monday">
+                <div class="day-name">MON</div>
+                <div class="day-type">Training</div>
+            </div>
+            <div class="day-tab rest" data-day="tuesday">
+                <div class="day-name">TUE</div>
+                <div class="day-type">Rest</div>
+            </div>
+            <div class="day-tab training" data-day="wednesday">
+                <div class="day-name">WED</div>
+                <div class="day-type">Training</div>
+            </div>
+            <div class="day-tab rest" data-day="thursday">
+                <div class="day-name">THU</div>
+                <div class="day-type">Rest</div>
+            </div>
+            <div class="day-tab training" data-day="friday">
+                <div class="day-name">FRI</div>
+                <div class="day-type">Training</div>
+            </div>
+            <div class="day-tab refeed" data-day="saturday">
+                <div class="day-name">SAT</div>
+                <div class="day-type">Refeed</div>
+            </div>
+            <div class="day-tab rest" data-day="sunday">
+                <div class="day-name">SUN</div>
+                <div class="day-type">Rest</div>
+            </div>
+        </div>
+
+        <div class="content-padding">
+            <div class="calories-display">
+                <div class="calories-main" id="dailyCalories">2,450</div>
+                <div class="calories-label">Daily Target</div>
+            </div>
+
+            <div class="macros-grid">
+                <div class="macro-card">
+                    <div class="macro-value protein" id="proteinTarget">165g</div>
+                    <div class="macro-label">Protein Min</div>
+                </div>
+                <div class="macro-card">
+                    <div class="macro-value carbs" id="carbsTarget">220-235g</div>
+                    <div class="macro-label">Carbs Range</div>
+                </div>
+                <div class="macro-card">
+                    <div class="macro-value fats" id="fatsTarget">95g</div>
+                    <div class="macro-label">Fats Max</div>
+                </div>
+            </div>
+
+            <div class="water-tracker">
+                <div style="font-weight: 600; margin-bottom: 5px;">Water Goal: 3.5L</div>
+                <div style="font-size: 12px; opacity: 0.9;">Tap circles as you drink</div>
+                <div class="water-circles" id="waterCircles">
+                    <!-- Generated by JavaScript -->
+                </div>
+                <div id="waterProgress">0 / 14 glasses</div>
+            </div>
+
+            <div class="meals-section" id="mealsContainer">
+                <!-- Meal cards will be inserted here -->
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-button active">
+                <div class="nav-icon">📊</div>
+                <div>Today</div>
+            </button>
+            <button class="nav-button">
+                <div class="nav-icon">🔄</div>
+                <div>Swap Foods</div>
+            </button>
+            <button class="nav-button">
+                <div class="nav-icon">📈</div>
+                <div>Progress</div>
+            </button>
+            <button class="nav-button">
+                <div class="nav-icon">⚙️</div>
+                <div>Settings</div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sample meal plan data structure (this would come from Module 58)
+        const mealPlanData = {
+            training: {
+                calories: 2450,
+                protein: "165g min",
+                carbs: "220-235g",
+                fats: "95g max",
+                water: "3.5L",
+                meals: [
+                    {
+                        name: "Breakfast",
+                        calories: 520,
+                        foods: [
+                            { name: "Rolled Oats", amount: "80g dry", macros: "P: 11g, C: 52g, F: 6g", calories: 304, checked: false },
+                            { name: "Whey Protein", amount: "30g", macros: "P: 24g, C: 2g, F: 1g", calories: 113, checked: false },
+                            { name: "Banana", amount: "1 medium", macros: "P: 1g, C: 27g, F: 0g", calories: 105, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Mid-Morning",
+                        calories: 340,
+                        foods: [
+                            { name: "Greek Yogurt", amount: "200g", macros: "P: 20g, C: 9g, F: 10g", calories: 190, checked: false },
+                            { name: "Berries", amount: "150g", macros: "P: 2g, C: 18g, F: 1g", calories: 85, checked: false },
+                            { name: "Almonds", amount: "15g", macros: "P: 3g, C: 2g, F: 8g", calories: 87, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Lunch",
+                        calories: 580,
+                        foods: [
+                            { name: "Chicken Breast", amount: "150g raw", macros: "P: 35g, C: 0g, F: 4g", calories: 172, checked: false },
+                            { name: "Jasmine Rice", amount: "80g dry", macros: "P: 6g, C: 64g, F: 1g", calories: 284, checked: false },
+                            { name: "Mixed Vegetables", amount: "200g", macros: "P: 3g, C: 12g, F: 0g", calories: 60, checked: false },
+                            { name: "Olive Oil", amount: "1 tbsp", macros: "P: 0g, C: 0g, F: 14g", calories: 119, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Pre-Workout",
+                        calories: 290,
+                        foods: [
+                            { name: "Apple", amount: "1 large", macros: "P: 1g, C: 31g, F: 0g", calories: 115, checked: false },
+                            { name: "Rice Cakes", amount: "2 cakes", macros: "P: 2g, C: 16g, F: 1g", calories: 70, checked: false },
+                            { name: "Almond Butter", amount: "15g", macros: "P: 4g, C: 2g, F: 9g", calories: 105, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Post-Workout & Dinner",
+                        calories: 720,
+                        foods: [
+                            { name: "Whey Protein", amount: "30g", macros: "P: 24g, C: 2g, F: 1g", calories: 113, checked: false },
+                            { name: "White Rice", amount: "60g dry", macros: "P: 4g, C: 48g, F: 1g", calories: 213, checked: false },
+                            { name: "Salmon", amount: "120g raw", macros: "P: 25g, C: 0g, F: 14g", calories: 220, checked: false },
+                            { name: "Sweet Potato", amount: "200g", macros: "P: 4g, C: 40g, F: 0g", calories: 172, checked: false }
+                        ]
+                    }
+                ]
+            },
+            rest: {
+                calories: 2150,
+                protein: "140g min",
+                carbs: "180-195g",
+                fats: "110g max",
+                water: "3.0L",
+                meals: [
+                    {
+                        name: "Breakfast",
+                        calories: 450,
+                        foods: [
+                            { name: "Eggs", amount: "3 whole", macros: "P: 18g, C: 2g, F: 15g", calories: 210, checked: false },
+                            { name: "Avocado", amount: "1/2 medium", macros: "P: 2g, C: 9g, F: 15g", calories: 160, checked: false },
+                            { name: "Sourdough Toast", amount: "1 slice", macros: "P: 4g, C: 15g, F: 1g", calories: 80, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Mid-Morning",
+                        calories: 320,
+                        foods: [
+                            { name: "Greek Yogurt", amount: "150g", macros: "P: 15g, C: 7g, F: 8g", calories: 145, checked: false },
+                            { name: "Walnuts", amount: "20g", macros: "P: 3g, C: 3g, F: 13g", calories: 131, checked: false },
+                            { name: "Berries", amount: "100g", macros: "P: 1g, C: 12g, F: 0g", calories: 57, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Lunch",
+                        calories: 520,
+                        foods: [
+                            { name: "Turkey Mince", amount: "120g raw", macros: "P: 28g, C: 0g, F: 8g", calories: 172, checked: false },
+                            { name: "Quinoa", amount: "60g dry", macros: "P: 8g, C: 39g, F: 4g", calories: 222, checked: false },
+                            { name: "Leafy Greens", amount: "150g", macros: "P: 3g, C: 6g, F: 0g", calories: 35, checked: false },
+                            { name: "Olive Oil", amount: "1 tbsp", macros: "P: 0g, C: 0g, F: 14g", calories: 119, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Afternoon",
+                        calories: 280,
+                        foods: [
+                            { name: "Protein Smoothie", amount: "1 serving", macros: "P: 25g, C: 15g, F: 5g", calories: 200, checked: false },
+                            { name: "Cashews", amount: "15g", macros: "P: 3g, C: 2g, F: 7g", calories: 83, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Dinner",
+                        calories: 580,
+                        foods: [
+                            { name: "Barramundi", amount: "150g raw", macros: "P: 30g, C: 0g, F: 6g", calories: 162, checked: false },
+                            { name: "Brown Rice", amount: "50g dry", macros: "P: 4g, C: 36g, F: 2g", calories: 175, checked: false },
+                            { name: "Roast Vegetables", amount: "250g", macros: "P: 4g, C: 20g, F: 8g", calories: 150, checked: false },
+                            { name: "Tahini", amount: "1 tbsp", macros: "P: 3g, C: 3g, F: 8g", calories: 89, checked: false }
+                        ]
+                    }
+                ]
+            },
+            refeed: {
+                calories: 2850,
+                protein: "165g min",
+                carbs: "320-340g",
+                fats: "85g max",
+                water: "3.5L",
+                meals: [
+                    {
+                        name: "Breakfast",
+                        calories: 650,
+                        foods: [
+                            { name: "Pancakes", amount: "3 medium", macros: "P: 12g, C: 45g, F: 8g", calories: 295, checked: false },
+                            { name: "Greek Yogurt", amount: "200g", macros: "P: 20g, C: 9g, F: 10g", calories: 190, checked: false },
+                            { name: "Maple Syrup", amount: "2 tbsp", macros: "P: 0g, C: 26g, F: 0g", calories: 104, checked: false },
+                            { name: "Berries", amount: "150g", macros: "P: 2g, C: 18g, F: 1g", calories: 85, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Mid-Morning",
+                        calories: 380,
+                        foods: [
+                            { name: "Whey Protein", amount: "30g", macros: "P: 24g, C: 2g, F: 1g", calories: 113, checked: false },
+                            { name: "Banana", amount: "2 medium", macros: "P: 2g, C: 54g, F: 1g", calories: 210, checked: false },
+                            { name: "Peanut Butter", amount: "1 tbsp", macros: "P: 4g, C: 3g, F: 8g", calories: 95, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Lunch",
+                        calories: 720,
+                        foods: [
+                            { name: "Chicken Thigh", amount: "150g raw", macros: "P: 32g, C: 0g, F: 12g", calories: 220, checked: false },
+                            { name: "White Rice", amount: "120g dry", macros: "P: 8g, C: 96g, F: 2g", calories: 426, checked: false },
+                            { name: "Stir-fry Vegetables", amount: "200g", macros: "P: 3g, C: 12g, F: 2g", calories: 74, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Pre-Workout",
+                        calories: 320,
+                        foods: [
+                            { name: "White Bread", amount: "2 slices", macros: "P: 6g, C: 30g, F: 2g", calories: 160, checked: false },
+                            { name: "Honey", amount: "2 tbsp", macros: "P: 0g, C: 34g, F: 0g", calories: 128, checked: false },
+                            { name: "Banana", amount: "1 small", macros: "P: 1g, C: 19g, F: 0g", calories: 75, checked: false }
+                        ]
+                    },
+                    {
+                        name: "Post-Workout & Dinner",
+                        calories: 780,
+                        foods: [
+                            { name: "Whey Protein", amount: "30g", macros: "P: 24g, C: 2g, F: 1g", calories: 113, checked: false },
+                            { name: "White Rice", amount: "80g dry", macros: "P: 5g, C: 64g, F: 1g", calories: 284, checked: false },
+                            { name: "Lean Beef", amount: "120g raw", macros: "P: 30g, C: 0g, F: 8g", calories: 180, checked: false },
+                            { name: "Sweet Potato", amount: "250g", macros: "P: 5g, C: 50g, F: 0g", calories: 215, checked: false }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Current state
+        let currentDay = 'monday';
+        let currentDayType = 'training';
+        let checkedItems = {};
+        let waterGlasses = 0;
+
+        // Initialize app
+        function init() {
+            setupCalendarTabs();
+            setupWaterTracker();
+            updateDisplay();
+        }
+
+        function setupCalendarTabs() {
+            const tabs = document.querySelectorAll('.day-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    // Add active to clicked tab
+                    tab.classList.add('active');
+                    
+                    currentDay = tab.dataset.day;
+                    currentDayType = tab.classList.contains('training') ? 'training' : 
+                                   tab.classList.contains('refeed') ? 'refeed' : 'rest';
+                    
+                    updateDisplay();
+                });
+            });
+        }
+
+        function setupWaterTracker() {
+            const waterCircles = document.getElementById('waterCircles');
+            // Create 14 water circles (representing ~250ml glasses for 3.5L)
+            for (let i = 0; i < 14; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'water-circle';
+                circle.addEventListener('click', () => toggleWaterGlass(i));
+                waterCircles.appendChild(circle);
+            }
+        }
+
+        function toggleWaterGlass(index) {
+            const circles = document.querySelectorAll('.water-circle');
+            const circle = circles[index];
+            
+            if (circle.classList.contains('filled')) {
+                // Unfill this circle and all after it
+                for (let i = index; i < circles.length; i++) {
+                    circles[i].classList.remove('filled');
+                }
+                waterGlasses = index;
+            } else {
+                // Fill this circle and all before it
+                for (let i = 0; i <= index; i++) {
+                    circles[i].classList.add('filled');
+                }
+                waterGlasses = index + 1;
+            }
+            
+            updateWaterProgress();
+        }
+
+        function updateWaterProgress() {
+            const progress = document.getElementById('waterProgress');
+            const progressFill = document.getElementById('progressFill');
+            
+            progress.textContent = `${waterGlasses} / 14 glasses`;
+            progressFill.style.width = `${(waterGlasses / 14) * 100}%`;
+        }
+
+        function updateDisplay() {
+            const data = mealPlanData[currentDayType];
+            
+            // Update calories and macros
+            document.getElementById('dailyCalories').textContent = data.calories.toLocaleString();
+            document.getElementById('proteinTarget').textContent = data.protein;
+            document.getElementById('carbsTarget').textContent = data.carbs;
+            document.getElementById('fatsTarget').textContent = data.fats;
+            
+            // Update meals
+            renderMeals(data.meals);
+            
+            // Add fade-in animation
+            document.querySelector('.content-padding').classList.add('fade-in');
+            setTimeout(() => {
+                document.querySelector('.content-padding').classList.remove('fade-in');
+            }, 300);
+        }
+
+        function renderMeals(meals) {
+            const container = document.getElementById('mealsContainer');
+            container.innerHTML = '';
+            
+            meals.forEach((meal, mealIndex) => {
+                const mealCard = document.createElement('div');
+                mealCard.className = 'meal-card';
+                
+                mealCard.innerHTML = `
+                    <div class="meal-header">
+                        <div class="meal-title">${meal.name}</div>
+                        <div class="meal-calories">${meal.calories} cals</div>
+                    </div>
+                    <div class="meal-body">
+                        ${meal.foods.map((food, foodIndex) => `
+                            <div class="food-item">
+                                <div class="food-info">
+                                    <div class="food-name">${food.name}</div>
+                                    <div class="food-amount">${food.amount}</div>
+                                    <div class="food-macros">${food.macros} • ${food.calories} cals</div>
+                                </div>
+                                <button class="swap-button" onclick="swapFood(${mealIndex}, ${foodIndex})">Swap</button>
+                                <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleFood(${mealIndex}, ${foodIndex})">
+                                    ${food.checked ? '✓' : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(mealCard);
+            });
+        }
+
+        function toggleFood(mealIndex, foodIndex) {
+            const data = mealPlanData[currentDayType];
+            const food = data.meals[mealIndex].foods[foodIndex];
+            food.checked = !food.checked;
+            
+            renderMeals(data.meals);
+            updateProgress();
+        }
+
+        function swapFood(mealIndex, foodIndex) {
+            // This would integrate with your food database to show alternatives
+            alert(`Swap functionality for ${mealPlanData[currentDayType].meals[mealIndex].foods[foodIndex].name} would show alternative foods here!`);
+        }
+
+        function updateProgress() {
+            const data = mealPlanData[currentDayType];
+            let checkedCalories = 0;
+            let totalCalories = 0;
+            
+            data.meals.forEach(meal => {
+                meal.foods.forEach(food => {
+                    totalCalories += food.calories;
+                    if (food.checked) {
+                        checkedCalories += food.calories;
+                    }
+                });
+            });
+            
+            const progress = (checkedCalories / totalCalories) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        // Initialize the app when page loads
+        init();
+    </script>
+</body>
+</html>

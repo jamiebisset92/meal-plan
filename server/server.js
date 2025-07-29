@@ -110,7 +110,7 @@ app.get('/plans/:fileName', async (req, res) => {
 });
 
 // Load Typeform mapping
-const typeformMapping = require('./Typeform-Mapping.json');
+const typeformMapping = require('../data/Typeform-Mapping.json');
 
 // Map Typeform data to your userData structure
 function mapTypeformToUserData(formResponse) {

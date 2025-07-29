@@ -58,7 +58,7 @@ app.post('/webhook/typeform', async (req, res) => {
     console.log('📊 Targets object:', JSON.stringify(targets, null, 2));
     console.log('📅 Day type:', dayType);
     console.log('🎯 Selected targets:', JSON.stringify(targets[dayType], null, 2));
-    const mealPlanHTML = buildPersonalizedNutritionPlan(targets[dayType], userData);
+    const mealPlanHTML = buildPersonalizedNutritionPlan(targets, userData);
     
     // Step 3: Save to unique URL
     const planId = generatePlanId(userData);

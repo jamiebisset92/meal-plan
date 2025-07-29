@@ -157,9 +157,10 @@ function mapTypeformToUserData(formResponse) {
     weightUnit: answers['a8564238-b5ad-41da-a20d-931d603be9fc'] || 'kg',
     
     // Goals and activity
-    primaryGoal: answers['7e0b4bc4-3d07-4ecd-8eaf-5b8d3a8b7ebc'] || 'maintenance',
-    activityLevel: answers['90b96c9a-24d5-4c47-b59a-1b96e4a1fcc2'] || 'moderate',
+    goal: answers['06c1f01a-c171-4868-a0c1-2a93484e13ff'] || 'maintenance',
+    activityLevel: answers['a77e68a0-4210-4422-8ad3-a92e04600412'] || 'moderate',
     trainingDays: parseInt(answers['aa456f57-4bbb-4287-8b7e-a5e3f2ae9e3e']) || 3,
+    resultsTimeline: answers['03c4ef98-07d5-4f36-af3b-c181ed9ed6a6'] || 'moderate',
     
     // Methodology selection (new questions)
     currentCarbIntake: answers['b26c4c78-0f97-43a5-9b13-0bc4a7e8dcf3'] || '',

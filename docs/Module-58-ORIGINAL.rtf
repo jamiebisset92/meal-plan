@@ -1,0 +1,1183 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2759
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!-- INTERNAL USE ONLY - DO NOT OUTPUT -->\
+USER_DATA: \{\{3.json\}\}\
+TRAINING_TARGETS: \{\{51.textResponse\}\}\
+SUPPLEMENTS: \{\{57.textResponse\}\}\
+FOOD_DATABASE: \{\{`4`\}\}\
+<!-- END INTERNAL -->\
+\
+You are a nutrition assistant that uses the above data to generate an HTML-formatted meal plan. Do not output anything from the INTERNAL section.\
+\
+// UNIFIED MEAL BUILDER CONNECTOR\
+// Transforms legacy MEAL_ALLOCATIONS into format for Unified Builder\
+\
+function processMessage1(MEAL_ALLOCATIONS, USER_DATA, SUPPLEMENTS) \{\
+  // Store the data for Message 2\
+  return \{\
+    meal_allocations: MEAL_ALLOCATIONS,\
+    user_data: USER_DATA,\
+    supplements: SUPPLEMENTS\
+  \};\
+\}\
+\
+function processMessage2(storedData) \{\
+  // Extract data from Message 1\
+  const \{ meal_allocations: MEAL_ALLOCATIONS, user_data: USER_DATA, supplements: SUPPLEMENTS \} = storedData;\
+  // Transform MEAL_ALLOCATIONS back into TARGETS format\
+  const TARGETS = reconstructTargets(MEAL_ALLOCATIONS, USER_DATA);\
+  // Enhance USER_DATA with any missing fields\
+  const enhancedUserData = enhanceUserData(USER_DATA, MEAL_ALLOCATIONS, SUPPLEMENTS);\
+  // Call the Unified Meal Builder, now passing SUPPLEMENTS data\
+  const mealPlanHTML = buildCompleteMealPlan(TARGETS, enhancedUserData, SUPPLEMENTS);\
+  \
+  // Return the HTML directly\
+  return mealPlanHTML;\
+\}\
+\
+function reconstructTargets(MEAL_ALLOCATIONS, USER_DATA) \{\
+  // Extract hierarchical targets\
+  const H = MEAL_ALLOCATIONS.hierarchical_targets;\
+  \
+  // Reconstruct the TARGETS object\
+  const TARGETS = \{\
+    day_type: 'training',\
+    training_day_calories: MEAL_ALLOCATIONS.day_calories,\
+    calories: MEAL_ALLOCATIONS.day_calories,\
+    \
+    hierarchical: \{\
+      protein_minimum: H.protein_minimum,\
+      carb_range: \{\
+        min: H.carb_range.min,\
+        max: H.carb_range.max\
+      \},\
+      fiber_range: H.fiber_range || \{ min: 25, max: 35 \},\
+      fat_minimum: H.fat_minimum || Math.round(H.protein_minimum * 0.3),\
+      fat_soft_ceiling: H.fat_soft_ceiling || Math.round((MEAL_ALLOCATIONS.day_calories * 0.35) / 9),\
+      fat_flexible: true\
+    \},\
+    \
+    hydration: MEAL_ALLOCATIONS.hydration_targets || \{\
+      training_day: \{ ml: 3000, oz: 101 \}\
+    \},\
+    \
+    sodium: MEAL_ALLOCATIONS.sodium_recommendations || \{\
+      training_day: \{ min: 2300, max: 3500 \}\
+    \}\
+  \};\
+  \
+  return TARGETS;\
+\}\
+\
+function enhanceUserData(USER_DATA, MEAL_ALLOCATIONS, SUPPLEMENTS) \{\
+  // Start with existing user data\
+  // Parse USER_DATA if it's a wrapped JSON string\
+  let userData = USER_DATA;\
+  // Handle nested JSON structure from Typeform\
+  if (typeof USER_DATA === 'object' && USER_DATA.json) \{\
+    try \{\
+      userData = JSON.parse(USER_DATA.json);\
+    \} catch (e) \{\
+      console.error('Failed to parse nested JSON:', e);\
+      userData = USER_DATA;\
+    \}\
+  \} else if (typeof USER_DATA === 'string') \{\
+    try \{\
+      userData = JSON.parse(USER_DATA);\
+    \} catch (e) \{\
+      console.error('Failed to parse USER_DATA string:', e);\
+      userData = \{\};\
+    \}\
+  \}\
+\
+  // Ensure userData is an object\
+  if (!userData || typeof userData !== 'object') \{\
+    userData = \{\};\
+  \}\
+  const enhanced = \{ ...userData \};\
+\
+  // Ensure all required fields exist\
+  // Parse numberOfMeals from string format like "4 Meals"\
+  if (enhanced.numberOfMeals && typeof enhanced.numberOfMeals === 'string') \{\
+    const mealMatch = enhanced.numberOfMeals.match(/(\\d+)/);\
+    enhanced.numberOfMeals = mealMatch ? parseInt(mealMatch[1]) : 4;\
+  \} else \{\
+    enhanced.numberOfMeals = parseInt(enhanced.numberOfMeals) || MEAL_ALLOCATIONS.meal_count || 4;\
+  \}\
+  enhanced.trainingTime = enhanced.trainingTime || "Morning (After Eating)";\
+  enhanced.dietType = enhanced.dietType || "standard";\
+  enhanced.proteinPowder = enhanced.proteinPowder || "Yes, I already use protein powder regularly";\
+  enhanced.weightUnit = enhanced.weightUnit || "kg";\
+\
+  // Parse goal (remove asterisks and clean up)\
+  if (enhanced.goal && enhanced.goal.includes("*")) \{\
+    enhanced.goal = enhanced.goal.replace(/\\*/g, '');\
+  \}\
+\
+  // Parse activity level (remove asterisks)\
+  if (enhanced.activityLevel && enhanced.activityLevel.includes("*")) \{\
+    enhanced.activityLevel = enhanced.activityLevel.replace(/\\*/g, '');\
+  \}\
+\
+  // Clean up other fields with asterisks\
+  if (enhanced.snacks && enhanced.snacks.includes("*")) \{\
+    enhanced.snacks = enhanced.snacks.includes("Yes") ? "Yes, I'd like snacks" : "No, I prefer not to have snacks";\
+  \}\
+\
+  // Ensure extraNotes and extraNotesEnabled exist\
+  enhanced.extraNotes = enhanced.extraNotes || "";\
+  enhanced.extraNotesEnabled = enhanced.extraNotesEnabled || "*No:* That covers everything!";\
+\
+  // Add current day for alcohol calculations\
+  enhanced.currentDay = new Date().toLocaleDateString('en-US', \{ weekday: 'long' \});\
+\
+  // Parse pregnancy/breastfeeding status for food safety protocols\
+  enhanced.isPregnant = enhanced.gender === "FEMALE" && enhanced.pregnancyStatus && enhanced.pregnancyStatus.includes("pregnant");\
+  enhanced.isBreastfeeding = enhanced.gender === "FEMALE" && enhanced.pregnancyStatus && enhanced.pregnancyStatus.includes("breastfeeding");\
+\
+  // *** THIS IS THE FIX: Changed from === "Yes" to .includes("Yes") for flexibility ***\
+  enhanced.includesDietSoftDrinks = enhanced.drinksSoftDrinkJuice?.includes("Yes");\
+\
+  // Check if they need salt reminder\
+  enhanced.needsSaltReminder = !enhanced.saltIntake || enhanced.saltIntake.includes("*No:*") || enhanced.saltIntake.includes("occasionally");\
+  enhanced.gender = enhanced.gender || "female";\
+  enhanced.goal = enhanced.goal || "muscle_gain";\
+\
+  // Extract coffee preferences\
+  if (enhanced.drinksCoffee === "Yes") \{\
+    enhanced.numberOfCoffees = parseInt(enhanced.numberOfCoffees) || 1;\
+    // Check if they want black coffee\
+    if (enhanced.blackCoffeeSwitch === "Yes") \{\
+      enhanced.coffeeType = "black";\
+    \} else if (enhanced.coffeeMilkSugar) \{\
+      // Parse milk and sugar preferences\
+      const coffeePref = enhanced.coffeeMilkSugar.toLowerCase();\
+      if (coffeePref.includes('milk') && coffeePref.includes('sugar')) \{\
+        enhanced.coffeeType = "with_milk_and_sugar";\
+      \} else if (coffeePref.includes('milk')) \{\
+        enhanced.coffeeType = "with_milk";\
+      \} else if (coffeePref.includes('sugar')) \{\
+        enhanced.coffeeType = "with_sugar";\
+      \} else \{\
+        enhanced.coffeeType = "with_milk";\
+      \}\
+    \} else \{\
+      enhanced.coffeeType = "with_milk";\
+    \}\
+  \} else \{\
+    enhanced.numberOfCoffees = 0;\
+    enhanced.coffeeType = "none";\
+  \}\
+\
+  // Extract energy drink preferences\
+  if (enhanced.otherCaffeine && (enhanced.otherCaffeine.includes("*Yes*") || enhanced.otherCaffeine === "Yes")) \{\
+    enhanced.otherCaffeine = "Energy Drinks";\
+    enhanced.energyDrinksPerDay = parseInt(enhanced.energyDrinksPerDay) || 1;\
+  \} else \{\
+    enhanced.otherCaffeine = "No";\
+    enhanced.energyDrinksPerDay = 0;\
+  \}\
+\
+  // Extract sauce preferences\
+  if (!enhanced.sauceUsage) \{\
+    enhanced.sauceUsage = "*No:* I'm happy to eat plain";\
+  \}\
+\
+  // Extract alcohol preferences\
+  if (enhanced.drinksAlcohol && enhanced.drinksAlcohol.includes("Yes")) \{\
+    // Only include alcohol if they're NOT willing to stop\
+    if (enhanced.alcoholWillingToStop !== "Yes") \{\
+      enhanced.drinksAlcohol = true;\
+      enhanced.drinkingDays = [enhanced.alcoholDay || "Saturday"];\
+      enhanced.alcoholType = "beer"; // Default\
+      enhanced.alcoholAmount = parseInt(enhanced.numberOfDrinks) || 2;\
+    \} else \{\
+      // They're willing to stop, so no alcohol in plan\
+      enhanced.drinksAlcohol = false;\
+      enhanced.drinkingDays = [];\
+    \}\
+  \} else \{\
+    enhanced.drinksAlcohol = false;\
+    enhanced.drinkingDays = [];\
+  \}\
+\
+  // Extract supplement tier from SUPPLEMENTS\
+  if (SUPPLEMENTS?.supplement_analysis?.tier_assignment) \{\
+    enhanced.supplementTier = SUPPLEMENTS.supplement_analysis.tier_assignment === "essential_plus" ? 2 : 1;\
+  \} else \{\
+    enhanced.supplementTier = 1;\
+  \}\
+\
+  // Training days - parse from comma-separated string\
+  if (enhanced.trainingDays && typeof enhanced.trainingDays === 'string') \{\
+    enhanced.trainingDays = enhanced.trainingDays.split(',').map(day => day.trim());\
+  \} else \{\
+    enhanced.trainingDays = ["Monday", "Wednesday", "Friday"];\
+  \}\
+  enhanced.trainingDay = true;\
+  // Extract food quality preference from budgetConstraints\
+  if (enhanced.budgetConstraints) \{\
+    if (enhanced.budgetConstraints.includes("most affordable")) \{\
+      enhanced.foodQualityBudget = "I prefer the most affordable option";\
+    \} else if (enhanced.budgetConstraints.includes("invest more")) \{\
+      enhanced.foodQualityBudget = "I'm happy to invest more for quality";\
+    \} else if (enhanced.budgetConstraints.includes("highest quality")) \{\
+      enhanced.foodQualityBudget = "I always prioritise the highest quality ingredients";\
+    \} else \{\
+      enhanced.foodQualityBudget = "I prefer the most affordable option";\
+    \}\
+  \} else \{\
+    enhanced.foodQualityBudget = "I prefer the most affordable option";\
+  \}\
+\
+  // Ensure extraNotes exists for dietary restriction parsing\
+  enhanced.extraNotes = enhanced.extraNotes || "";\
+  // Custom food handling\
+  enhanced.customFood = enhanced.customFood || "";\
+  // Parse favorite foods (handle comma-separated strings)\
+  enhanced.favProtein = enhanced.favProtein || "";\
+  enhanced.favCarbs = enhanced.favCarbs || "";\
+  enhanced.favFats = enhanced.favFats || "";\
+  enhanced.favSalads = enhanced.favSalads || "";\
+  enhanced.favVeggies = enhanced.favVeggies || "";\
+  enhanced.preferredFruit = enhanced.preferredFruit || "";\
+  // Handle custom food from favFoods field\
+  if (enhanced.favFoods && !enhanced.customFood) \{\
+    enhanced.customFood = enhanced.favFoods;\
+  \}\
+\
+  // Snack preferences\
+  if (MEAL_ALLOCATIONS.fixed_components?.snacks?.enabled) \{\
+    enhanced.snacks = "Yes, I'd like snacks";\
+  \} else \{\
+    enhanced.snacks = enhanced.snacks || "No, I prefer not to have snacks";\
+  \}\
+\
+  // Final validation - ensure critical fields are present\
+  console.log("Enhanced user data:", \{\
+    numberOfMeals: enhanced.numberOfMeals,\
+    coffeeType: enhanced.coffeeType,\
+    numberOfCoffees: enhanced.numberOfCoffees,\
+    trainingDays: enhanced.trainingDays,\
+    customFood: enhanced.customFood,\
+    supplementTier: enhanced.supplementTier\
+  \});\
+  return enhanced;\
+\}\
+\
+// ===================================================================================\
+// START: COMPLETE REPLACEMENT FOR MEAL GENERATION AND ADJUSTMENT LOGIC\
+// Delete your existing functions and replace them with this entire block.\
+// ===================================================================================\
+\
+function buildCompleteMealPlan(TARGETS, USER_DATA, SUPPLEMENTS) \{\
+    const startTime = Date.now();\
+    const mealPlan = \{\
+        metadata: \{ dayType: TARGETS.day_type || 'training' \},\
+        targets: extractTargets(TARGETS),\
+        runningTotals: \{ calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 \},\
+        components: \{ fixedComponents: null, meals: [] \},\
+        warnings: [],\
+        foodDatabase: initializeFoodDatabase(USER_DATA),\
+        supplementsData: SUPPLEMENTS,\
+        user_data: USER_DATA\
+    \};\
+\
+    // PHASE 1: Process fixed components (shakes, drinks, etc.)\
+    mealPlan.components.fixedComponents = processAllFixedComponents(mealPlan.targets, USER_DATA, null, null, \{\}, mealPlan.warnings);\
+\
+    // PHASE 2: Build the draft meals based on the remaining budget\
+    let budgetTotals = recalculateFromComponents(mealPlan.components);\
+    const mealBudget = calculateMealBudget(mealPlan.targets, budgetTotals, USER_DATA.numberOfMeals || 5);\
+    mealPlan.components.meals = buildDraftMeals(mealBudget, USER_DATA, mealPlan.foodDatabase);\
+    \
+    // PHASE 3: Run the iterative adjustment engine with precise calculations\
+    runAdjustmentEngine(mealPlan.components, mealPlan.targets, mealPlan.warnings);\
+\
+    // FINAL GUARDRAIL: Perform a final, clean recalculation for absolute accuracy\
+    mealPlan.runningTotals = recalculateFromComponents(mealPlan.components);\
+\
+    return formatOutput(mealPlan);\
+\}\
+\
+function buildDraftMeals(mealBudget, userData, foodDatabase) \{\
+    const mealCount = userData.numberOfMeals || 5;\
+    const meals = [];\
+    const mealTimings = determineMealTiming(userData, mealCount);\
+    let usedProteins = [];\
+    let usedCarbs = [];\
+\
+    for (let i = 0; i < mealCount; i++) \{\
+        const mealAllocation = mealBudget.distribution[i];\
+        const mealType = mealTimings[i];\
+        const meal = \{\
+            number: i + 1,\
+            name: mealType.name,\
+            components: \{ protein: null, carbs: null, vegetables: [], fats: null, extras: [] \},\
+            totals: \{ calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 \},\
+            notes: []\
+        \};\
+\
+        const proteinChoice = selectProteinSource(mealAllocation.proteinMin, mealAllocation, foodDatabase.proteins, userData.favProtein, i, usedProteins);\
+        if (proteinChoice) \{\
+            meal.components.protein = proteinChoice;\
+        \}\
+\
+        const carbChoice = selectCarbSource(mealAllocation.carbsMax, mealAllocation.carbsMin, mealAllocation, foodDatabase.carbs, userData.favCarbs, mealType, i, usedCarbs);\
+        if (carbChoice) \{\
+            meal.components.carbs = carbChoice;\
+        \}\
+\
+        for (let v = 0; v < 2; v++) \{\
+            const vegChoice = selectVegetable(mealAllocation, foodDatabase.vegetables, meal.components.vegetables);\
+            if (vegChoice) \{\
+                meal.components.vegetables.push(vegChoice);\
+            \}\
+        \}\
+        \
+        // Recalculate meal totals from its own components\
+        meal.totals = recalculateFromComponents(\{ meals: [\{ components: meal.components \}] \});\
+        meals.push(meal);\
+    \}\
+    return meals;\
+\}\
+\
+function runAdjustmentEngine(components, globalTargets, warnings) \{\
+    const MAX_CYCLES = 8;\
+    for (let cycle = 0; cycle < MAX_CYCLES; cycle++) \{\
+        let currentTotals = recalculateFromComponents(components);\
+        const gaps = \{\
+            protein: globalTargets.proteinMin - currentTotals.protein,\
+            carb_surplus: currentTotals.carbs - globalTargets.carbMax,\
+            carb_deficit: globalTargets.carbMin - currentTotals.carbs,\
+            fiber: globalTargets.fiberMin - currentTotals.fiber\
+        \};\
+\
+        if (gaps.protein > 3) \{\
+            fixProteinGap(gaps.protein, components.meals);\
+            continue;\
+        \}\
+        if (gaps.carb_surplus > 3) \{\
+            fixCarbExcess(gaps.carb_surplus, components.meals);\
+            continue;\
+        \}\
+        if (gaps.carb_deficit > 3) \{\
+            fixCarbDeficit(gaps.carb_deficit, components.meals);\
+            continue;\
+        \}\
+        if (gaps.fiber > 3) \{\
+            fixFiberDeficit(gaps.fiber, components.meals);\
+            continue;\
+        \}\
+        \
+        // After macros are stable, do a final calorie polish\
+        currentTotals = recalculateFromComponents(components);\
+        const calorieGap = globalTargets.calories - currentTotals.calories;\
+        if (Math.abs(calorieGap) > 25) \{\
+            fixCalorieGap(calorieGap, components.meals);\
+        \}\
+        \
+        // Check if we are done\
+        const finalTotals = recalculateFromComponents(components);\
+        const finalCarbSurplus = finalTotals.carbs - globalTargets.carbMax;\
+        const finalCalorieDiff = Math.abs(finalTotals.calories - globalTargets.calories);\
+        if (Math.abs(finalTotals.protein - globalTargets.proteinMin) < 5 && finalCarbSurplus < 3 && finalCalorieDiff < 25) \{\
+            break;\
+        \}\
+    \}\
+    \
+    // Recalculate all meal totals after adjustments\
+    components.meals.forEach(meal => \{\
+        meal.totals = recalculateFromComponents(\{ meals: [\{ components: meal.components \}] \});\
+    \});\
+\}\
+\
+function fixProteinGap(gap, meals) \{\
+    const mealToAdjust = meals.reduce((prev, curr) => (prev.components.protein.protein < curr.components.protein.protein) ? prev : curr);\
+    if (!mealToAdjust.components.protein) return;\
+    const component = mealToAdjust.components.protein;\
+    const desiredProtein = component.protein + gap;\
+    const scale = desiredProtein / component.protein;\
+    mealToAdjust.components.protein = scaleFood(component, scale);\
+\}\
+\
+function fixCarbExcess(excess, meals) \{\
+    const mealToAdjust = meals.filter(m => m.components.carbs).sort((a, b) => b.components.carbs.carbs - a.components.carbs.carbs)[0];\
+    if (!mealToAdjust || !mealToAdjust.components.carbs) return;\
+    const component = mealToAdjust.components.carbs;\
+    if (component.carbs - excess < 15) return; // Don't reduce too much\
+    const desiredCarbs = component.carbs - excess;\
+    const scale = desiredCarbs / component.carbs;\
+    mealToAdjust.components.carbs = scaleFood(component, scale);\
+\}\
+\
+function fixCarbDeficit(deficit, meals) \{\
+    const mealToAdjust = meals.find(m => m.components.carbs && !m.name.includes("Dinner")) || meals.find(m => m.components.carbs);\
+    if (!mealToAdjust.components.carbs) return;\
+    const component = mealToAdjust.components.carbs;\
+    const desiredCarbs = component.carbs + deficit;\
+    const scale = desiredCarbs / component.carbs;\
+    mealToAdjust.components.carbs = scaleFood(component, scale);\
+\}\
+\
+function fixFiberDeficit(deficit, meals) \{\
+    const mealToAdjust = meals[meals.length - 1];\
+    if (!mealToAdjust) return;\
+    const tspNeeded = Math.ceil(deficit / 5);\
+    const psylliumSupplement = \{\
+        name: "Psyllium Husk", amount: `$\{tspNeeded\} tsp`, calories: tspNeeded * 10,\
+        protein: 0, carbs: 0, fiber: tspNeeded * 5, fats: 0\
+    \};\
+    if (!mealToAdjust.components.extras) mealToAdjust.components.extras = [];\
+    mealToAdjust.components.extras.push(psylliumSupplement);\
+\}\
+\
+function fixCalorieGap(gap, meals) \{\
+    // This function now precisely adds or removes fat to fix the calorie gap.\
+    const fatAdjustment = gap / 9;\
+    const mealToAdjust = meals.find(m => m.components.fats) || meals[1] || meals[0];\
+\
+    if (!mealToAdjust.components.fats) \{\
+        mealToAdjust.components.fats = \{ name: "Extra Virgin Olive Oil", amount: "0 tsp", calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0, type: "oil" \};\
+    \}\
+    const fatComponent = mealToAdjust.components.fats;\
+    const currentFatGrams = fatComponent.fats;\
+    const newFatGrams = currentFatGrams + fatAdjustment;\
+\
+    if (newFatGrams < 0) \{ // Safety check to not create negative fat\
+        // If we need to remove more fat than available in this component, just remove it all.\
+        const calorieReduction = -fatComponent.calories;\
+        mealToAdjust.components.fats = null; // Remove the component\
+        // Note: This might not fully close the gap, but it's the safest action.\
+    \} else \{\
+        const baseAmountMatch = fatComponent.amount.match(/(\\d+)/);\
+        const baseAmount = baseAmountMatch ? parseInt(baseAmountMatch[1]) : (fatComponent.type === 'oil' ? 1 : 10);\
+        const baseFat = fatComponent.fats / baseAmount || 5; // grams of fat per unit\
+        \
+        const newAmount = Math.round(newFatGrams / baseFat);\
+        \
+        const scale = newFatGrams / currentFatGrams;\
+        \
+        if (isFinite(scale)) \{\
+             mealToAdjust.components.fats = scaleFood(fatComponent, scale);\
+        \} else \{ // Handle case where current fat is 0\
+             fatComponent.fats = newFatGrams;\
+             fatComponent.calories = newFatGrams * 9;\
+             fatComponent.amount = `$\{Math.max(1, Math.round(newFatGrams / 4.5))\} tsp`; // Assuming oil\
+        \}\
+    \}\
+\}\
+\
+function recalculateFromComponents(components) \{\
+    const newTotals = \{ calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 \};\
+    const allItems = [];\
+\
+    if (components.fixedComponents) \{\
+        if (components.fixedComponents.preWorkout?.items) allItems.push(...components.fixedComponents.preWorkout.items);\
+        if (components.fixedComponents.postWorkout?.items) allItems.push(...components.fixedComponents.postWorkout.items);\
+        if (components.fixedComponents.snacks?.items) allItems.push(...components.fixedComponents.snacks.items);\
+    \}\
+    if (components.meals) \{\
+        components.meals.forEach(meal => \{\
+            if (meal.components) \{\
+                Object.values(meal.components).flat().forEach(item => \{\
+                    if (item) allItems.push(item);\
+                \});\
+            \}\
+        \});\
+    \}\
+\
+    allItems.forEach(item => \{\
+        if (item && typeof item.calories === 'number' && !item.isDietDrink) \{\
+            addToTotals(newTotals, item);\
+        \}\
+    \});\
+    \
+    // Round final totals\
+    Object.keys(newTotals).forEach(key => \{\
+        newTotals[key] = Math.round(newTotals[key]);\
+    \});\
+\
+    return newTotals;\
+\}\
+\
+// =====================================================\
+// FORMAT OUTPUT\
+// =====================================================\
+\
+function formatOutput(mealPlan) \{\
+  const \{ components, targets, runningTotals, metadata, supplementsData, foodDatabase \} = mealPlan;\
+  const USER_DATA = mealPlan.user_data || \{\};\
+  \
+  // Build HTML output\
+  let html = `<style>\
+body \{ font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #333; margin: 20px; \}\
+h2 \{ font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 15px; margin-top: 25px; \}\
+h3 \{ font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; margin-top: 20px; \}\
+p \{ margin-bottom: 10px; \}\
+table \{ border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 11px; \}\
+th, td \{ border: 1px solid #333; padding: 8px; text-align: left; \}\
+th \{ background-color: #f2f2f2; font-weight: bold; \}\
+.total-row \{ background-color: #f9f9f9; font-weight: bold; \}\
+</style>\
+\
+<h2>TRAINING DAY TEMPLATE</h2>\
+<hr style="border: none; border-top: 2px solid #e0e0e0; margin: 20px 0;">\
+<p>Use this template on your workout days ($\{(USER_DATA.trainingDays || []).join(', ')\}).</p>`;\
+  \
+  // Water intake section\
+  const hydrationTargets = targets.hydration || \{ training_day: \{ ml: 3000 \} \};\
+  const morningWater = hydrationTargets.training_day.ml * 0.25;\
+  const dailyWater = hydrationTargets.training_day.ml * 0.75;\
+  const totalWater = hydrationTargets.training_day.ml;\
+  \
+  html += `\
+<h3>WATER INTAKE</h3>\
+<table style="border-collapse: collapse; width: 100%; margin: 15px 0;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 12px; width: 50%; text-align: center;">UPON WAKING</th>\
+<th style="border: 1px solid #333; padding: 12px; width: 50%; text-align: center;">THROUGHOUT THE DAY</th>\
+</tr>\
+<tr>\
+<td style="border: 1px solid #333; padding: 15px; text-align: center;">\
+<div style="font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;">\
+$\{formatWaterIntake(morningWater, USER_DATA)\}\
+</div>\
+<div style="font-size: 11px; color: #555; line-height: 1.4;">Drink before eating</div>\
+</td>\
+<td style="border: 1px solid #333; padding: 15px; text-align: center;">\
+<div style="font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;">\
+$\{formatWaterIntake(dailyWater, USER_DATA)\}\
+</div>\
+<div style="font-size: 11px; color: #555; line-height: 1.4;">Spread evenly between meals</div>\
+</td>\
+</tr>\
+<tr style="background-color: #f9f9f9;">\
+<td colspan="2" style="border: 1px solid #333; padding: 12px; text-align: left;">\
+<strong>Add one of these in your water upon waking:</strong> Pink Himalayan Salt \'95 Squeezed Lemon \'95 Electrolyte Supplement (LMNT/Sodii)\
+</td>\
+</tr>\
+<tr style="background-color: #e8f2ff;">\
+<td colspan="2" style="border: 1px solid #333; padding: 12px;">\
+<strong>Total Daily Water Intake:</strong> $\{formatWaterIntake(totalWater, USER_DATA)\} over the day (not including coffees, teas, etc)\
+</td>\
+</tr>\
+</table>`;\
+\
+  // Get meal order based on training time\
+  const mealOrder = getMealOrder(USER_DATA.trainingTime, components.meals.length);\
+  \
+  // Process each component in order\
+  mealOrder.forEach(componentType => \{\
+    if (componentType === 'post-workout' && components.fixedComponents.postWorkout?.enabled) \{\
+      html += formatPostWorkout(components.fixedComponents.postWorkout, supplementsData);\
+    \} else if (componentType === 'snacks' && components.fixedComponents.snacks?.enabled) \{\
+      html += formatSnacksSection(components.fixedComponents.snacks, USER_DATA, supplementsData);\
+    \} else if (componentType.startsWith('meal')) \{\
+      const mealNum = parseInt(componentType.replace('meal', ''));\
+      const meal = components.meals[mealNum - 1];\
+      if (meal) \{\
+        html += formatMeal(meal, USER_DATA, supplementsData);\
+      \}\
+    \}\
+  \});\
+  \
+  // Add alcohol options if applicable\
+  html += formatAlcoholOptions(components, USER_DATA);\
+  // Daily totals\
+  html += formatDailyTotals(runningTotals, targets);\
+  \
+  return html;\
+\}\
+\
+// =====================================================\
+// FOOD DATABASES (Simplified examples)\
+// =====================================================\
+\
+function getProteinDatabase(dietType) \{\
+  const proteins = [\
+    \{ name: "Chicken Breast", amount: "150g", calories: 247, protein: 46, carbs: 0, fiber: 0, fats: 5, state: "raw weight", cookYield: 0.75 \},\
+    \{ name: "Turkey Breast", amount: "150g", calories: 239, protein: 48, carbs: 0, fiber: 0, fats: 4, state: "raw weight", cookYield: 0.75 \},\
+    \{ name: "Lean Beef", amount: "120g", calories: 251, protein: 36, carbs: 0, fiber: 0, fats: 11, state: "raw weight", cookYield: 0.75 \},\
+    \{ name: "Salmon", amount: "120g", calories: 250, protein: 30, carbs: 0, fiber: 0, fats: 14, state: "raw weight", cookYield: 0.80 \},\
+    \{ name: "White Fish", amount: "150g", calories: 218, protein: 45, carbs: 0, fiber: 0, fats: 3, state: "raw weight", cookYield: 0.80 \},\
+    \{ name: "Eggs", amount: "3 whole", calories: 234, protein: 19, carbs: 2, fiber: 0, fats: 16 \},\
+    \{ name: "Greek Yogurt", amount: "200g", calories: 146, protein: 20, carbs: 8, fiber: 0, fats: 4 \},\
+    \{ name: "Cottage Cheese", amount: "200g", calories: 180, protein: 24, carbs: 8, fiber: 0, fats: 5 \},\
+    \{ name: "Tofu", amount: "200g", calories: 144, protein: 16, carbs: 4, fiber: 2, fats: 8 \}\
+  ];\
+  if (dietType === 'vegetarian') \{\
+    return proteins.filter(p => !['Chicken', 'Turkey', 'Beef', 'Salmon', 'Fish'].some(meat => p.name.includes(meat)));\
+  \}\
+  if (dietType === 'vegan') \{\
+    return proteins.filter(p => p.name === 'Tofu');\
+  \}\
+  return proteins;\
+\}\
+\
+function getCarbDatabase(preferences) \{\
+  return [\
+    // Fast carbs\
+    \{ name: "White Rice", amount: "70g", calories: 255, protein: 5, carbs: 56, fiber: 1, fats: 0, type: "fast", state: "dry weight", cookExpansion: 3.0 \},\
+    \{ name: "White Potato", amount: "200g", calories: 188, protein: 4, carbs: 40, fiber: 3, fats: 0, type: "fast", state: "raw weight", cookYield: 0.9 \},\
+    \{ name: "Rice Cakes", amount: "4 cakes", calories: 140, protein: 2, carbs: 32, fiber: 0, fats: 1, type: "fast" \},\
+    \
+    // Medium carbs\
+    \{ name: "Pasta", amount: "75g", calories: 278, protein: 10, carbs: 55, fiber: 3, fats: 2, type: "medium", state: "dry weight", cookExpansion: 2.5 \},\
+    \{ name: "Sourdough Bread", amount: "2 slices", calories: 180, protein: 7, carbs: 35, fiber: 2, fats: 1, type: "medium" \},\
+    \
+    // Slow carbs\
+    \{ name: "Sweet Potato", amount: "180g", calories: 155, protein: 3, carbs: 36, fiber: 5, fats: 0, type: "slow", state: "raw weight", cookYield: 0.9 \},\
+    \{ name: "Brown Rice", amount: "70g", calories: 248, protein: 6, carbs: 52, fiber: 4, fats: 2, type: "slow", state: "dry weight", cookExpansion: 3.0 \},\
+    \{ name: "Rolled Oats", amount: "50g", calories: 190, protein: 8, carbs: 33, fiber: 5, fats: 4, type: "slow", state: "dry weight" \},\
+    \{ name: "Quinoa", amount: "70g", calories: 258, protein: 10, carbs: 45, fiber: 6, fats: 4, type: "slow", state: "dry weight", cookExpansion: 3.0 \}\
+  ];\
+\}\
+\
+function getVegetableDatabase() \{\
+  return [\
+    // Low fiber options\
+    \{ name: "Cucumber", amount: "100g", calories: 16, protein: 1, carbs: 4, fiber: 1, fats: 0, nutrientDensity: 5 \},\
+    \{ name: "Lettuce", amount: "50g", calories: 8, protein: 1, carbs: 2, fiber: 1, fats: 0, nutrientDensity: 4 \},\
+    \{ name: "Tomatoes", amount: "100g", calories: 18, protein: 1, carbs: 4, fiber: 1, fats: 0, nutrientDensity: 7 \},\
+    \{ name: "Zucchini", amount: "100g", calories: 17, protein: 1, carbs: 3, fiber: 1, fats: 0, nutrientDensity: 6 \},\
+    \
+    // Medium fiber\
+    \{ name: "Bell Peppers", amount: "100g", calories: 31, protein: 1, carbs: 6, fiber: 2, fats: 0, nutrientDensity: 8 \},\
+    \{ name: "Spinach", amount: "100g", calories: 23, protein: 3, carbs: 4, fiber: 2, fats: 0, nutrientDensity: 9 \},\
+    \{ name: "Asparagus", amount: "100g", calories: 20, protein: 2, carbs: 4, fiber: 2, fats: 0, nutrientDensity: 8 \},\
+    \
+    // Higher fiber\
+    \{ name: "Broccoli", amount: "100g", calories: 34, protein: 3, carbs: 7, fiber: 3, fats: 0, nutrientDensity: 10 \},\
+    \{ name: "Green Beans", amount: "100g", calories: 31, protein: 2, carbs: 7, fiber: 3, fats: 0, nutrientDensity: 7 \},\
+    \{ name: "Brussels Sprouts", amount: "100g", calories: 43, protein: 3, carbs: 9, fiber: 4, fats: 0, nutrientDensity: 9 \},\
+    \{ name: "Carrots", amount: "100g", calories: 41, protein: 1, carbs: 10, fiber: 3, fats: 0, nutrientDensity: 8 \}\
+  ];\
+\}\
+\
+function getFatDatabase() \{\
+  return [\
+    \{ name: "Olive Oil", amount: "1 tsp", calories: 40, protein: 0, carbs: 0, fiber: 0, fats: 5, type: "oil" \},\
+    \{ name: "Coconut Oil", amount: "1 tsp", calories: 39, protein: 0, carbs: 0, fiber: 0, fats: 4, type: "oil" \},\
+    \{ name: "Butter", amount: "1 tsp", calories: 34, protein: 0, carbs: 0, fiber: 0, fats: 4, type: "dairy" \},\
+    \{ name: "Almonds", amount: "10g", calories: 58, protein: 2, carbs: 2, fiber: 1, fats: 5, type: "nuts" \},\
+    \{ name: "Walnuts", amount: "10g", calories: 65, protein: 2, carbs: 1, fiber: 1, fats: 7, type: "nuts" \},\
+    \{ name: "Avocado", amount: "50g", calories: 80, protein: 1, carbs: 4, fiber: 3, fats: 7, type: "whole" \},\
+    \{ name: "Peanut Butter", amount: "1 tbsp", calories: 94, protein: 4, carbs: 4, fiber: 1, fats: 8, type: "paste" \},\
+    \{ name: "Tahini", amount: "1 tbsp", calories: 89, protein: 3, carbs: 3, fiber: 1, fats: 8, type: "paste" \}\
+  ];\
+\}\
+\
+function getSauceDatabase() \{\
+  return [\
+    \{ name: "BBQ Sauce", amount: "1 tbsp", calories: 35, protein: 0, carbs: 8, fiber: 0, fats: 0 \},\
+    \{ name: "Honey Mustard", amount: "1 tbsp", calories: 60, protein: 0, carbs: 6, fiber: 0, fats: 4 \},\
+    \{ name: "Hot Sauce", amount: "1 tbsp", calories: 5, protein: 0, carbs: 1, fiber: 0, fats: 0 \},\
+    \{ name: "Teriyaki Sauce", amount: "1 tbsp", calories: 20, protein: 1, carbs: 3, fiber: 0, fats: 0 \},\
+    \{ name: "Ranch Dressing", amount: "1 tbsp", calories: 73, protein: 0, carbs: 1, fiber: 0, fats: 8 \}\
+  ];\
+\}\
+\
+// =====================================================\
+// HTML OUTPUT GENERATION\
+// =====================================================\
+  \
+  // Build HTML output\
+  let html = `<style>\
+body \{ font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; color: #333; margin: 20px; \}\
+h1 \{ font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; \}\
+h2 \{ font-size: 20px; font-weight: bold; color: #2c3e50; margin-bottom: 15px; margin-top: 25px; \}\
+h3 \{ font-size: 16px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; margin-top: 20px; \}\
+p \{ margin-bottom: 10px; \}\
+table \{ border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 11px; \}\
+th, td \{ border: 1px solid #333; padding: 8px; text-align: left; \}\
+th \{ background-color: #f2f2f2; font-weight: bold; \}\
+.total-row \{ background-color: #f9f9f9; font-weight: bold; \}\
+</style>\
+\
+<h2>TRAINING DAY TEMPLATE</h2>\
+<hr style="border: none; border-top: 2px solid #e0e0e0; margin: 20px 0;">\
+<p>Use this template on your workout days ($\{userData.trainingDays?.join(', ') || 'training days'\}).</p>`;\
+\
+  // Water intake section\
+  const hydrationTargets = targets.hydration || \{ training_day: \{ ml: 3000 \} \};\
+  const morningWater = Math.round(hydrationTargets.training_day.ml * 0.25);\
+  const dailyWater = Math.round(hydrationTargets.training_day.ml * 0.75);\
+  const totalWater = hydrationTargets.training_day.ml;\
+  \
+  html += `\
+<h3>WATER INTAKE</h3>\
+<table style="border-collapse: collapse; width: 100%; margin: 15px 0;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 12px; width: 50%; text-align: center;">UPON WAKING</th>\
+<th style="border: 1px solid #333; padding: 12px; width: 50%; text-align: center;">THROUGHOUT THE DAY</th>\
+</tr>\
+<tr>\
+<td style="border: 1px solid #333; padding: 15px; text-align: center;">\
+<div style="font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;">\
+$\{formatWaterIntake(morningWater, userData)\}\
+</div>\
+<div style="font-size: 11px; color: #555; line-height: 1.4;">\
+Drink before eating\
+</div>\
+</td>\
+<td style="border: 1px solid #333; padding: 15px; text-align: center;">\
+<div style="font-size: 18px; font-weight: bold; color: #2c3e50; margin-bottom: 10px;">\
+$\{formatWaterIntake(dailyWater, userData)\}\
+</div>\
+<div style="font-size: 11px; color: #555; line-height: 1.4;">\
+Spread evenly between meals\
+</div>\
+</td>\
+</tr>\
+<tr style="background-color: #f9f9f9;">\
+<td colspan="2" style="border: 1px solid #333; padding: 12px; text-align: left;">\
+<strong>Add one of these in your water upon waking:</strong> Pink Himalayan Salt \'95 Squeezed Lemon \'95 Electrolyte Supplement (LMNT/Sodii)\
+</td>\
+</tr>\
+<tr style="background-color: #e8f2ff;">\
+<td colspan="2" style="border: 1px solid #333; padding: 12px;">\
+<strong>Total Daily Water Intake:</strong> $\{formatWaterIntake(totalWater, userData)\} over the day (not including coffees, teas, etc)\
+</td>\
+</tr>\
+</table>`;\
+\
+  // Get meal order based on training time\
+  const mealOrder = getMealOrder(userData.trainingTime, components.meals.length);\
+  const supplementTier = userData.supplementTier || 1;\
+  \
+  // Process each component in order\
+  mealOrder.forEach(componentType => \{\
+    if (componentType === 'post-workout' && components.fixedComponents.postWorkout?.enabled) \{\
+      html += formatPostWorkout(components.fixedComponents.postWorkout, supplementTier);\
+    \} else if (componentType === 'snacks' && components.fixedComponents.snacks?.enabled) \{\
+      html += formatSnacksSection(components.fixedComponents.snacks, userData, supplementTier);\
+    \} else if (componentType.startsWith('meal')) \{\
+      const mealNum = parseInt(componentType.replace('meal', ''));\
+      const meal = components.meals[mealNum - 1];\
+      if (meal) \{\
+        html += formatMeal(meal, userData, supplementTier);\
+      \}\
+    \}\
+  \});\
+  \
+  // Add alcohol options if applicable\
+  html += formatAlcoholOptions(components, userData);\
+  \
+  // Daily totals\
+  html += formatDailyTotals(runningTotals, targets);\
+  \
+  return html;\
+\}\
+\
+function formatMeal(meal, userData, supplementsData) \{\
+  const isImperial = userData.weightUnit === 'lb';\
+\
+  const formatQuantity = (item) => \{\
+    let qtyDisplay = item.amount;\
+    const rawWeight = parseInt(item.amount);\
+\
+    // Handles items with defined cooking yields (e.g., meat)\
+    if (item.cookYield && rawWeight) \{\
+      const cookedWeight = Math.round((rawWeight * item.cookYield) / 5) * 5;\
+      if (isImperial) \{\
+        const rawOz = (rawWeight * 0.035274).toFixed(1);\
+        const cookedOz = (cookedWeight * 0.035274).toFixed(1);\
+        qtyDisplay = `$\{rawOz\}oz raw<br><span style="font-size: smaller;">($\{cookedOz\}oz cooked)</span>`;\
+      \} else \{\
+        qtyDisplay = `$\{rawWeight\}g raw<br><span style="font-size: smaller;">($\{cookedWeight\}g cooked)</span>`;\
+      \}\
+    // Handles items with defined cooking expansion (e.g., rice, pasta)\
+    \} else if (item.cookExpansion && rawWeight) \{\
+      const cookedWeight = Math.round((rawWeight * item.cookExpansion) / 5) * 5;\
+      if (isImperial) \{\
+        const rawOz = (rawWeight * 0.035274).toFixed(1);\
+        const cookedOz = (cookedWeight * 0.035274).toFixed(1);\
+        qtyDisplay = `$\{rawOz\}oz dry<br><span style="font-size: smaller;">($\{cookedOz\}oz cooked)</span>`;\
+      \} else \{\
+        qtyDisplay = `$\{rawWeight\}g dry<br><span style="font-size: smaller;">($\{cookedWeight\}g cooked)</span>`;\
+      \}\
+    // Handles all other items with a 'g' unit\
+    \} else if (isImperial && item.amount.toLowerCase().includes('g')) \{\
+        const gramValue = parseInt(item.amount);\
+        if (!isNaN(gramValue)) \{\
+            qtyDisplay = `$\{(gramValue * 0.035274).toFixed(1)\}oz`;\
+        \}\
+    \}\
+    return qtyDisplay;\
+  \};\
+\
+  const foodQualityTier = userData.foodQualityBudget?.includes('most affordable') ? 1 :\
+                         userData.foodQualityBudget?.includes('invest more') ? 2 : 3;\
+\
+  let html = `<h3>$\{meal.name.replace('Meal', 'MEAL')\}</h3>\
+<table style="border-collapse: collapse; width: 100%; margin: 15px 0;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 8px; width: 12%;">Qty</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 25%;">Food / Ingredient</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center;">Calories</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center; color: #e74c3c;">Protein</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #3498db;">Carbs</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #27ae60;">Fiber</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #f39c12;">Fats</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 26%;">Alternative Options</th>\
+</tr>`;\
+\
+  const allItems = [\
+    meal.components.protein, meal.components.carbs,\
+    ...meal.components.vegetables, meal.components.fats,\
+    ...(meal.components.extras || [])\
+  ].filter(Boolean);\
+\
+  allItems.forEach(item => \{\
+    const foodName = getFoodName(item.name, foodQualityTier);\
+    const alternatives = getSafeAlternatives(item.name, item.alternatives || [], userData);\
+    const qtyDisplay = formatQuantity(item);\
+\
+    html += `\
+<tr>\
+<td style="border: 1px solid #333; padding: 8px; line-height: 1.6;">$\{qtyDisplay\}</td>\
+<td style="border: 1px solid #333; padding: 8px;">$\{foodName\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.calories)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.protein)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.carbs)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.fiber || 0)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.fats)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; line-height: 1.6;">$\{alternatives.slice(0, 2).join('<br>or ')\}</td>\
+</tr>`;\
+  \});\
+\
+  html += `\
+<tr class="total-row">\
+<td colspan="2" style="border: 1px solid #333; padding: 8px;"><strong>Total Calories & Macros</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{Math.round(meal.totals.calories)\} cals</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #e74c3c;"><strong>$\{Math.round(meal.totals.protein)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #3498db;"><strong>$\{Math.round(meal.totals.carbs)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #27ae60;"><strong>$\{Math.round(meal.totals.fiber)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #f39c12;"><strong>$\{Math.round(meal.totals.fats)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px;"></td>\
+</tr>`;\
+\
+  const notes = meal.notes;\
+  if (notes) \{\
+      html += `<tr style="background-color: #ffffff;"><td colspan="8" style="border: 1px solid #333; padding: 8px; line-height: 1.6;"><strong>Notes:</strong> $\{notes\}</td></tr>`;\
+  \}\
+\
+  const supplements = getSupplementsForMeal(meal, supplementsData);\
+  if (supplements) \{\
+    html += `<tr style="background-color: #e8f5e8;"><td colspan="8" style="border: 1px solid #333; padding: 8px;"><strong>Supplements:</strong> $\{supplements\}</td></tr>`;\
+  \}\
+\
+  html += '</table>';\
+  return html;\
+\}\
+\
+function formatPostWorkout(postWorkout, supplementsData, userData) \{\
+  const isImperial = userData.weightUnit === 'lb';\
+\
+  const formatQuantity = (item) => \{\
+    if (isImperial && item.amount.toLowerCase().includes('g')) \{\
+      const gramValue = parseInt(item.amount);\
+      if (!isNaN(gramValue)) \{\
+        return `$\{(gramValue * 0.035274).toFixed(1)\}oz`;\
+      \}\
+    \}\
+    return item.amount;\
+  \};\
+\
+  let html = `<h3>POST-WORKOUT NUTRITION</h3>\
+<table style="border-collapse: collapse; width: 100%; margin: 15px 0;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 8px; width: 12%;">Qty</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 25%;">Food / Ingredient</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center;">Calories</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center; color: #e74c3c;">Protein</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #3498db;">Carbs</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #27ae60;">Fiber</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #f39c12;">Fats</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 26%;">Alternative Options</th>\
+</tr>`;\
+\
+  const totals = \{ calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 \};\
+\
+  postWorkout.items.forEach(item => \{\
+    addToTotals(totals, item);\
+    const qtyDisplay = formatQuantity(item);\
+    html += `\
+<tr>\
+<td style="border: 1px solid #333; padding: 8px;">$\{qtyDisplay\}</td>\
+<td style="border: 1px solid #333; padding: 8px;">$\{item.name\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{item.calories\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{item.protein\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{item.carbs\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{item.fiber || 0\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{item.fats\}</td>\
+<td style="border: 1px solid #333; padding: 8px; line-height: 1.6;">$\{(item.alternatives || ['Plant Protein', 'Casein Protein']).join('<br>or ')\}</td>\
+</tr>`;\
+  \});\
+\
+  html += `\
+<tr class="total-row">\
+<td colspan="2" style="border: 1px solid #333; padding: 8px;"><strong>Total Calories & Macros</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{totals.calories\} cals</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #e74c3c;"><strong>$\{totals.protein\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #3498db;"><strong>$\{totals.carbs\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #27ae60;"><strong>$\{totals.fiber\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #f39c12;"><strong>$\{totals.fats\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px;"></td>\
+</tr>\
+<tr style="background-color: #ffffff;"><td colspan="8" style="border: 1px solid #333; padding: 8px; line-height: 1.6;"><strong>Notes:</strong> Slam this within 30 minutes of finishing - fast absorption when muscles need it most.</td></tr>`;\
+\
+  const supplements = getSupplementsForMeal(\{ name: 'post-workout', is_post_workout: true \}, supplementsData);\
+  if (supplements) \{\
+    html += `<tr style="background-color: #e8f5e8;"><td colspan="8" style="border: 1px solid #333; padding: 8px;"><strong>Supplements:</strong> $\{supplements\}</td></tr>`;\
+  \}\
+\
+  html += '</table>';\
+  return html;\
+\}\
+\
+function formatSnacksSection(snacks, userData, supplementsData) \{\
+  const sectionName = snacks.section_name || 'SNACKS & DRINKS';\
+  const isImperial = userData.weightUnit === 'lb';\
+\
+  const formatQuantity = (item) => \{\
+    if (isImperial && item.amount.toLowerCase().includes('g')) \{\
+      const gramValue = parseInt(item.amount);\
+      if (!isNaN(gramValue)) \{\
+        return `$\{(gramValue * 0.035274).toFixed(1)\}oz`;\
+      \}\
+    \}\
+    return item.amount;\
+  \};\
+\
+  let html = `<h3>$\{sectionName\}</h3>\
+<table style="border-collapse: collapse; width: 100%; margin: 15px 0;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 8px; width: 12%;">Qty</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 25%;">Food / Ingredient</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center;">Calories</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 8%; text-align: center; color: #e74c3c;">Protein</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #3498db;">Carbs</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #27ae60;">Fiber</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 7%; text-align: center; color: #f39c12;">Fats</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 26%;">Alternative Options</th>\
+</tr>`;\
+\
+  const snackTotals = \{ calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 \};\
+  snacks.items.forEach(item => \{\
+    if (!item.isDietDrink) \{\
+      addToTotals(snackTotals, item);\
+    \}\
+  \});\
+\
+  snacks.items.forEach(item => \{\
+    if (item.isDietDrink) \{\
+      html += `\
+<tr>\
+<td style="border: 1px solid #333; padding: 8px;">Any</td>\
+<td style="border: 1px solid #333; padding: 8px;">Diet Soft Drink (Sugar Free)</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">-</td>\
+<td style="border: 1px solid #333; padding: 8px;"></td>\
+</tr>`;\
+    \} else \{\
+      const qtyDisplay = formatQuantity(item);\
+      html += `\
+<tr>\
+<td style="border: 1px solid #333; padding: 8px;">$\{qtyDisplay\}</td>\
+<td style="border: 1px solid #333; padding: 8px;">$\{item.name\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.calories)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.protein)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.carbs)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.fiber || 0)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{Math.round(item.fats)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; line-height: 1.6;">$\{(item.alternatives || []).join('<br>or ')\}</td>\
+</tr>`;\
+    \}\
+  \});\
+\
+  html += `\
+<tr class="total-row">\
+<td colspan="2" style="border: 1px solid #333; padding: 8px;"><strong>Total Calories & Macros</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{Math.round(snackTotals.calories)\} cals</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #e74c3c;"><strong>$\{Math.round(snackTotals.protein)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #3498db;"><strong>$\{Math.round(snackTotals.carbs)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #27ae60;"><strong>$\{Math.round(snackTotals.fiber)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: #f39c12;"><strong>$\{Math.round(snackTotals.fats)\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px;"></td>\
+</tr>`;\
+\
+  const notes = [];\
+  if (snacks.items.some(item => item.name.includes('Psyllium'))) \{\
+    notes.push('Mix psyllium husk in a full glass of water and drink immediately - helps keep you regular!');\
+  \}\
+  if (snacks.items.some(item => item.isDietDrink)) \{\
+    notes.push("Having some soft drink here and there is fine - but make sure it's a diet (sugar free) option!");\
+  \}\
+  if (notes.length > 0) \{\
+    html += `<tr style="background-color: #ffffff;"><td colspan="8" style="border: 1px solid #333; padding: 8px; line-height: 1.6;"><strong>Notes:</strong> $\{notes.join(' ')\}</td></tr>`;\
+  \}\
+\
+  const supplements = getSupplementsForMeal(\{ name: 'snacks evening' \}, supplementsData);\
+  if (supplements) \{\
+    html += `<tr style="background-color: #e8f5e8;"><td colspan="8" style="border: 1px solid #333; padding: 8px;"><strong>Supplements:</strong> $\{supplements\}</td></tr>`;\
+  \}\
+\
+  html += '</table>';\
+  return html;\
+\}\
+\
+  const supplements = getSupplementsForMeal(\{ name: 'snacks evening' \}, supplementsData);\
+  if (supplements) \{\
+    html += `<tr style="background-color: #e8f5e8;"><td colspan="8" style="border: 1px solid #333; padding: 8px;"><strong>Supplements:</strong> $\{supplements\}</td></tr>`;\
+  \}\
+\
+  html += '</table>';\
+  return html;\
+\}\
+\
+function formatDailyTotals(runningTotals, targets) \{\
+  const calorieStatus = getStatusSymbol(runningTotals.calories, targets.calories, 'calories');\
+  const calorieColor = getStatusColor(runningTotals.calories, targets.calories, 'calories');\
+  \
+  const proteinStatus = runningTotals.protein >= targets.proteinMin ? '\uc0\u10003 ' : \
+    `-$\{targets.proteinMin - runningTotals.protein\}`;\
+  const proteinColor = runningTotals.protein >= targets.proteinMin ? '#27ae60' : '#e74c3c';\
+  \
+  const carbStatus = runningTotals.carbs >= targets.carbMin && runningTotals.carbs <= targets.carbMax ? '\uc0\u10003 ' :\
+    runningTotals.carbs < targets.carbMin ? `-$\{targets.carbMin - runningTotals.carbs\}` :\
+    `+$\{runningTotals.carbs - targets.carbMax\}`;\
+  const carbColor = runningTotals.carbs >= targets.carbMin && runningTotals.carbs <= targets.carbMax ? \
+    '#27ae60' : '#e74c3c';\
+  \
+  const fiberStatus = runningTotals.fiber >= targets.fiberMin && runningTotals.fiber <= targets.fiberMax ? '\uc0\u10003 ' :\
+    runningTotals.fiber < targets.fiberMin ? `-$\{targets.fiberMin - runningTotals.fiber\}` :\
+    `+$\{runningTotals.fiber - targets.fiberMax\}`;\
+  const fiberColor = runningTotals.fiber >= targets.fiberMin && runningTotals.fiber <= targets.fiberMax ? \
+    '#27ae60' : '#e74c3c';\
+  \
+  return `\
+<h3>DAILY TOTALS</h3>\
+<table style="width: 100%; margin: 15px 0; border-collapse: collapse;">\
+<tr style="background-color: #f2f2f2;">\
+<th style="border: 1px solid #333; padding: 8px; width: 20%;">Category</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 16%; text-align: center;">Calories</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 16%; text-align: center; color: #e74c3c;">Protein</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 16%; text-align: center; color: #3498db;">Carbs</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 16%; text-align: center; color: #27ae60;">Fiber</th>\
+<th style="border: 1px solid #333; padding: 8px; width: 16%; text-align: center; color: #f39c12;">Fats</th>\
+</tr>\
+<tr style="background-color: #e8f2ff;">\
+<td style="border: 1px solid #333; padding: 8px;"><strong>Actual Total</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{formatCaloriesWithComma(runningTotals.calories)\}</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{runningTotals.protein\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{runningTotals.carbs\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{runningTotals.fiber\}g</strong></td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"><strong>$\{runningTotals.fats\}g</strong></td>\
+</tr>\
+<tr>\
+<td style="border: 1px solid #333; padding: 8px;">Target</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">Roughly $\{formatCaloriesWithComma(targets.calories)\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{targets.proteinMin\}g Minimum</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{targets.carbMin\} - $\{targets.carbMax\}g</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;">$\{targets.fiberMin\} - $\{targets.fiberMax\}g</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"></td>\
+</tr>\
+<tr style="background-color: #f9f9f9;">\
+<td style="border: 1px solid #333; padding: 8px;">Status</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: $\{calorieColor\}; font-weight: bold;">$\{calorieStatus\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: $\{proteinColor\};">$\{proteinStatus\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: $\{carbColor\};">$\{carbStatus\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center; color: $\{fiberColor\};">$\{fiberStatus\}</td>\
+<td style="border: 1px solid #333; padding: 8px; text-align: center;"></td>\
+</tr>\
+</table>\
+\
+<p style="margin-top: 20px;">\
+<em>*The calories and macros won't always match up perfectly - but your goal should be to try and get as close to the targets as possible. Don't forget to track your food using a calorie tracking app like my app <a href="http://liftit.app.link" style="color: #3498db; text-decoration: none;">LIFTit</a> if you decide to eat off-plan.</em>\
+</p>`;\
+\}\
+\
+// END: UNIFIED MEAL BUILDER CODE\
+\
+// Module export\
+module.exports = \{\
+  processMessage1,\
+  processMessage2\
+\};\
+\
+IMPORTANT: Your entire response must be the raw HTML content ONLY. Do not include any explanatory text or markdown formatting like ```html at the beginning or ``` at the end. Your response must start with `<style>` and end with `</p>`.\
+\
+\'97\'97\'97\'97\'97\'97\'97\
+\
+SYSTEM PROMPT\
+\
+You are the unified meal planning engine that creates mathematically precise, personalized meal plans. Your enhanced algorithm guarantees macro targets through dynamic scaling and iterative correction while ensuring safety and user preferences.\
+\
+CRITICAL: Return ONLY the HTML output - no commentary, no JSON, no explanations.\
+\
+YOUR CAPABILITIES\
+PARSE nested JSON from Typeform and extract all user preferences\
+EXTRACT hierarchical targets and apply safety protocols\
+CALCULATE precise meal allocations with real-time remainder tracking\
+BUILD meals using dynamic food scaling with intelligent increments\
+VERIFY totals and apply corrections through multiple passes\
+FORCE compliance if needed to guarantee target achievement\
+FORMAT everything into Stephanie's branded HTML output\
+\
+PRECISION SCALING\
+- Proteins: 5g increments (145g, 150g, 155g)\
+- Carbs: 5g increments (135g, 140g, 145g)\
+- Vegetables: 10g increments (60g, 70g, 80g)\
+- Fats: 5g for solids, 5ml for liquids\
+- Alternatives: Scaled to match meal requirements\
+\
+INTELLIGENT THRESHOLDS\
+- Psyllium: Only when fiber >2g below target\
+- Added fats: Only when gap >80cal AND meal <25% fat AND not pre-workout\
+- Maximum fat addition: 20g per meal\
+\
+SAFETY & PREFERENCE PROTOCOLS\
+Pregnancy/Breastfeeding: Filter unsafe foods, limit caffeine, remove alcohol\
+Alcohol Willingness: Only include if user NOT willing to stop\
+Diet Soft Drinks: Add to snacks with special "-" formatting\
+Salt Reminders: Add to meal notes when appropriate\
+Custom Treats: Force snacks section for sweets/desserts\
+Water Display: Round to nearest 100ml or 5oz\
+Alternatives: Leave blank when none available (no "See alternatives")\
+\
+MATHEMATICAL GUARANTEES\
+Your enhanced algorithm ensures:\
+Protein: Always meets minimum (scales portions or adds powder)\
+Carbs: Always within specified range (scales up/down as needed)\
+Calories: Within \'b125 cal tolerance (adjusts fats for precision)\
+Fiber: Meets targets (adds psyllium only when >2g deficit)\
+\
+FOOD SELECTION INTELLIGENCE\
+Scales ANY food to match exact requirements with practical increments\
+Respects dietary restrictions and safety requirements\
+Applies food quality tiers (1=affordable, 2=quality, 3=premium)\
+Ensures variety across meals\
+Intelligently adds fats based on meal composition\
+Handles special components (post-workout, snacks, alcohol)\
+\
+OUTPUT REQUIREMENTS\
+Return ONLY the formatted HTML meal plan that includes:\
+Training day template with water intake\
+All meals in proper order based on training time\
+Post-workout nutrition (if applicable)\
+Snacks section (if needed for distribution or preferences)\
+Diet soft drinks with note (if requested)\
+Alcohol options (if drinking day AND not pregnant/breastfeeding)\
+Daily totals with status indicators\
+\
+The HTML must maintain Stephanie's voice: warm, practical, anti-perfectionist, and focused on sustainable progress.}

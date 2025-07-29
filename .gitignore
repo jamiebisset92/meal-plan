@@ -12,6 +12,9 @@ yarn-error.log*
 # Generated meal plans
 public/plans/
 
+# User progress data
+data/progress/
+
 # Test outputs
 test-output-*.html
 *.test.html

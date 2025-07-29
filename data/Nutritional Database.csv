@@ -1,0 +1,293 @@
+Food Name,Category,State,Serving Size (g),Calories,Protein (g),Carbs (g),Fiber (g),Fat (g),Saturated Fat (g),Sugar (g),Sodium (mg),Has_Raw_State,Raw_to_Cooked_Ratio,Raw_Calories,Raw_Protein (g),Raw_Carbs (g),Raw_Fat (g),Display_Raw_As,Prep Note,Best Paired With,Meal Timing,Dietary Type,Allergen/Gut Concerns
+Chicken Breast,Protein,cooked,100,165,31,0,0,3.6,1,0,74,true,0.75,120,23,0,2.6,raw,Grilled or baked,"Rice/Sweet Potato,Vegetables",Any,Meat,None
+Chicken Thigh,Protein,cooked,100,209,26,0,0,10.9,3,0,95,true,0.75,221,18.5,0,15.9,raw,Grilled with skin removed for less fat,"Rice/Quinoa,Vegetables",Any,Meat,None
+Turkey Breast,Protein,cooked,100,147,30,0,0,2.1,0.6,0,70,true,0.75,114,24,0,1.8,raw,Roasted or grilled,"Quinoa,Vegetables",Any,Meat,None
+Turkey Mince (93/7),Protein,cooked,100,161,28,0,0,8,2.5,0,70,true,0.75,121,22,0,7,raw,Drain any excess liquid,"Pasta,Tacos",Any,Meat,None
+Lean Beef Mince (5%),Protein,cooked,100,180,28,0,0,6,2.5,0,76,true,0.75,137,21.4,0,5,raw,Drain excess fat after cooking,"Pasta/Rice,Tomato-based dishes",Any,Meat,None
+Eye Fillet Steak,Protein,cooked,100,250,31,0,0,12,5,0,58,true,0.75,201,22,0,12,raw,Medium-rare recommended,"Sweet Potato,Green vegetables",Dinner,Meat,None
+Sirloin Steak,Protein,cooked,100,195,29.8,0,0,8.5,3.4,0,60,true,0.75,158,23,0,7,raw,Trim visible fat,"Potato,Salad",Dinner,Meat,None
+Salmon Fillet,Protein,cooked,100,206,25,0,0,11,2.2,0,63,true,0.8,208,20,0,13,raw,Baked or pan-seared,"Asparagus,Brown rice",Any,Fish,None
+Tuna (Canned in Water),Protein,drained,100,116,25.5,0,0,0.8,0.2,0,291,false,,,,,,,Already cooked,"Salad,Rice cakes",Lunch,Fish,None
+White Fish (Barramundi),Protein,cooked,100,115,23,0,0,2.3,0.5,0,70,true,0.8,92,18.5,0,1.8,raw,Steamed or grilled,"Vegetables,Sweet potato",Dinner,Fish,None
+Prawns,Protein,cooked,100,99,24,0,0,0.3,0.1,0,190,true,0.85,85,20,0,0.5,raw,Grilled or stir-fried,"Salad,Rice noodles",Any,Fish,Shellfish
+Eggs (Large),Protein,raw,50,70,6,0.5,0,5,1.6,0.5,70,false,,,,,,,1 large egg = 50g,"Toast,Vegetables",Breakfast,Plant,None
+Egg Whites,Protein,raw,100,52,11,0.7,0,0.2,0,0,166,false,,,,,,,From ~3 large eggs,"Vegetables,Toast",Breakfast,Plant,None
+Greek Yogurt (Non-fat),Protein,ready,100,59,10,3.6,0,0.4,0.3,3.2,45,false,,,,,,,No cooking required,"Berries,Granola",Breakfast/Snack,Plant,Lactose
+Greek Yogurt (2% fat),Protein,ready,150,100,15,6,0,2.5,1.5,4.5,60,false,,,,,,,No cooking required,"Berries,Nuts",Breakfast/Snack,Plant,Lactose
+Cottage Cheese (Low-fat),Protein,ready,100,72,12,3.4,0,1,0.6,3.1,372,false,,,,,,,No cooking required,"Fruit,Rice cakes",Snack,Plant,Lactose
+Tofu (Firm),Protein,raw,100,144,15.5,3.5,2.3,8.7,1.3,0.5,14,false,,,,,,,Can be eaten raw or cooked,"Stir-fry vegetables,Rice",Any,Vegan,None
+Tempeh,Protein,raw,100,192,19,9,9,11,2.3,0,9,false,,,,,,,Steam or pan-fry,"Vegetables,Quinoa",Any,Vegan,None
+Kangaroo Fillet,Protein,cooked,100,140,32,0,0,2,0.5,0,65,true,0.75,98,22,0,1,raw,Don't overcook - stays tender,"Sweet potato,Green beans",Dinner,Meat,None
+Smoked Salmon,Protein,ready,100,117,18,0,0,4.3,0.9,0,784,false,,,,,,,Ready to eat,"Bagels,Cream cheese",Breakfast,Fish,None
+Canned Chicken,Protein,drained,100,165,31,0,0,3.5,1,0,280,false,,,,,,,Already cooked,"Salads,Wraps",Lunch,Meat,None
+Ricotta Cheese (Part Skim),Protein,ready,100,138,11,3,0,8,5,0.3,84,false,,,,,,,No cooking required,"Pasta,Berries",Any,Plant,Lactose
+String Cheese (Mozzarella),Protein,ready,28,80,7,1,0,6,3.5,0,190,false,,,,,,,1 stick = 28g,"Snacking,Crackers",Snack,Plant,Lactose
+Beyond Meat (Ground),Protein,cooked,100,230,20,5,2,14,5,0,390,true,0.75,250,20,7,18,raw,Plant-based ground beef,"Tacos,Burgers",Any,Vegan,None
+Impossible Meat (Ground),Protein,cooked,100,240,19,9,3,14,8,1,370,true,0.75,240,19,9,14,raw,Plant-based ground beef,"Burgers,Pasta sauce",Any,Vegan,None
+Tofu (Silken),Protein,ready,100,55,4.8,2.9,0.3,2.7,0.4,0.7,7,false,,,,,,,Smoothies or desserts,"Smoothies,Desserts",Any,Vegan,None
+Tofu (Extra Firm),Protein,ready,100,91,9.9,2,1.9,4.7,0.7,0.3,10,false,,,,,,,Press before cooking,"Stir-fry,Grilling",Any,Vegan,None
+Seitan,Protein,ready,100,370,75,14,2,1.9,0.3,0,29,false,,,,,,,Wheat-based protein,"Stir-fry,Sandwiches",Any,Vegan,Gluten
+Nutritional Yeast,Protein,ready,15,60,8,5,3,0.5,0.1,0,10,false,,,,,,,2 tablespoons = 15g,"Popcorn,Pasta",Any,Vegan,None
+Oat Milk,Beverage,ready,240,120,3,16,2,5,0.5,7,100,false,,,,,,,1 cup = 240ml,"Coffee,Cereal",Any,Vegan,None
+Soy Milk,Beverage,ready,240,80,7,4,2,4,0.5,1,90,false,,,,,,,1 cup = 240ml,"Smoothies,Cereal",Any,Vegan,None
+Cashew Milk,Beverage,ready,240,25,1,1,0,2,0.5,0,160,false,,,,,,,1 cup = 240ml,"Coffee,Smoothies",Any,Vegan,None
+TVP (Textured Vegetable Protein),Protein,dry,100,345,50,35,18,1.5,0.2,0,10,true,3.0,345,50,35,1.5,dry,Rehydrate before use,"Chili,Tacos",Any,Vegan,None
+Vegan Fish (Plant-Based),Protein,ready,100,180,12,8,2,11,1.5,0,680,false,,,,,,,Various brands available,"Sushi,Fish tacos",Any,Vegan,None
+Duck Breast,Protein,cooked,100,201,23,0,0,11,3.3,0,65,true,0.65,190,19,0,13,raw,Score skin before cooking,"Orange sauce,Wild rice",Dinner,Meat,None
+Lamb Chops,Protein,cooked,100,294,25,0,0,21,8.8,0,72,true,0.75,258,20,0,19,raw,Grill or pan-sear,"Mint sauce,Vegetables",Dinner,Meat,None
+Scallops,Protein,cooked,100,111,20,5,0,0.8,0.2,0,667,true,0.8,88,16,4,0.7,raw,Pan-sear for best results,"Risotto,Asparagus",Dinner,Fish,Shellfish
+Bison (Ground),Protein,cooked,100,223,31,0,0,10,4.2,0,66,true,0.75,143,20,0,7,raw,Leaner than beef,"Burgers,Chili",Any,Meat,None
+Venison,Protein,cooked,100,158,30,0,0,3.2,1.2,0,54,true,0.75,120,23,0,2.4,raw,Very lean game meat,"Root vegetables,Wine sauce",Dinner,Meat,None
+Mussels,Protein,cooked,100,172,24,7,0,4.5,0.9,0,369,true,0.5,86,12,3.5,2.2,raw,Steam in wine or broth,"Pasta,Crusty bread",Dinner,Fish,Shellfish
+Lobster,Protein,cooked,100,89,19,0,0,0.9,0.2,0,486,true,0.75,77,17,0,0.8,raw,Boiled or grilled,"Butter,Lemon",Dinner,Fish,Shellfish
+Liver (Chicken),Protein,cooked,100,167,24.5,0.9,0,6.5,2.1,0,71,true,0.7,116,17,0.6,4.8,raw,High in vitamins,"Onions,Bacon",Dinner,Meat,None
+Chicken Mince,Protein,cooked,100,180,28,0,0,7,2,0,85,true,0.75,143,22,0,5.5,raw,Drain excess liquid,"Pasta,Stir-fry",Any,Meat,None
+High Protein Bread,Starch,ready,40,100,10,12,4,1.5,0.3,1,180,false,,,,,,,1 slice = 40g,"Eggs,Turkey",Any,Vegan,Gluten
+White Rice,Starch,cooked,100,130,2.7,28,0.4,0.3,0.1,0,1,true,3.0,365,7,80,0.7,dry,Steamed or boiled,"Chicken/Fish,Vegetables",Any,Vegan,None
+Brown Rice,Starch,cooked,100,112,2.6,24,1.8,0.9,0.2,0.3,5,true,2.5,362,7.5,77,2.9,dry,Higher fiber than white rice,"Beef/Chicken,Vegetables",Any,Vegan,None
+Sweet Potato,Starch,cooked,100,90,2,21,3.3,0.2,0,6.5,36,true,0.9,86,1.6,20,0.1,raw,Baked or steamed,"Chicken/Fish,Green vegetables",Any,Vegan,High FODMAP
+White Potato,Starch,cooked,100,87,1.9,20,1.8,0.1,0,0.9,6,true,0.9,77,2,17,0.1,raw,Boiled or baked without skin,"Lean beef,Vegetables",Any,Vegan,None
+Oats (Rolled),Starch,cooked,100,71,2.5,12,1.7,1.5,0.3,0.3,4,true,2.0,379,13.2,68,7.0,dry,Cooked with water,"Berries,Nuts",Breakfast,Vegan,Gluten (if not certified GF)
+Quinoa,Starch,cooked,100,120,4.4,21,2.8,1.9,0.2,0.9,7,true,2.5,368,14,64,6.1,dry,Complete protein source,"Vegetables,Legumes",Any,Vegan,None
+Pasta (Whole Wheat),Starch,cooked,100,124,5.3,27,4.5,0.5,0.1,0.8,5,true,2.5,348,14,73,2.5,dry,Al dente is best,"Tomato sauce,Vegetables",Dinner,Vegan,Gluten;High FODMAP
+Couscous,Starch,cooked,100,112,3.8,23,1.4,0.2,0,0,5,true,2.5,376,12.8,77,0.6,dry,Fluff with fork after cooking,"Vegetables,Chickpeas",Any,Vegan,Gluten
+Ezekiel Bread,Starch,ready,34,80,4,15,3,0.5,0,0,75,false,,,,,,,1 slice = 34g,"Eggs,Avocado",Breakfast,Vegan,Gluten
+Whole Wheat Bread,Starch,ready,28,69,3.6,12,1.9,0.9,0.2,1.8,136,false,,,,,,,1 slice = 28g,"Turkey,Vegetables",Lunch,Vegan,Gluten;High FODMAP
+Sourdough Bread,Starch,ready,30,82,3,16,0.8,0.9,0.1,0.8,174,false,,,,,,,1 slice = 30g,"Eggs,Smoked salmon",Breakfast,Vegan,Gluten
+White Bread,Starch,ready,25,67,2,13,0.6,0.8,0.2,1.5,135,false,,,,,,,1 slice = 25g,"Sandwiches,Post-workout",Any,Vegan,Gluten
+Rice Cakes (Plain),Starch,ready,9,35,0.9,7.3,0.4,0.3,0.1,0,29,false,,,,,,,1 cake = 9g,"Cottage cheese,Peanut butter",Snack,Vegan,None
+Corn Tortillas,Starch,ready,24,52,1.4,11,1.5,0.6,0.1,0.2,12,false,,,,,,,1 small = 24g,"Chicken,Beans",Any,Vegan,None
+Bagel (Plain),Starch,ready,95,245,10,48,2,1.5,0.3,5,430,false,,,,,,,1 medium = 95g,"Cream cheese,Smoked salmon",Breakfast,Vegan,Gluten
+English Muffin,Starch,ready,57,134,4.4,27,1.5,1,0.2,2,206,false,,,,,,,1 muffin = 57g,"Eggs,Peanut butter",Breakfast,Vegan,Gluten
+Granola,Starch,ready,60,298,6,40,4,14,2,12,140,false,,,,,,,1/2 cup = 60g,"Yogurt,Berries",Breakfast,Vegan,Gluten;Nuts
+Quinoa Pasta,Starch,cooked,100,148,5,30,3,1.5,0.2,1,8,true,2.3,364,14,71,3.5,dry,Gluten-free alternative,"Marinara,Vegetables",Dinner,Vegan,None
+Shirataki Noodles,Starch,ready,100,10,0,3,3,0,0,0,10,false,,,,,,,Rinse well before use,"Stir-fry,Pasta sauce",Any,Vegan,None
+Quick Oats,Starch,cooked,100,68,2.4,11.7,1.5,1.4,0.3,0.4,4,true,2.0,375,13,66.5,6.5,dry,Instant preparation,"Berries,Honey",Breakfast,Vegan,Gluten (if not certified GF)
+Rye Bread,Starch,ready,32,83,2.7,15.5,1.9,1.1,0.2,1.2,211,false,,,,,,,1 slice = 32g,"Smoked salmon,Cream cheese",Any,Vegan,Gluten
+Gluten Free Wraps,Starch,ready,50,130,2,28,3,2,0.3,1,280,false,,,,,,,1 wrap = 50g,"Chicken,Vegetables",Lunch,Vegan,None
+Gluten Free Bread,Starch,ready,35,90,1,19,1,1.5,0.2,2,150,false,,,,,,,1 slice = 35g,"Avocado,Eggs",Any,Vegan,None
+Broccoli,Vegetable,cooked,100,35,2.4,7.2,3.3,0.4,0.1,1.4,41,true,0.95,34,2.8,7,0.4,raw,Steamed or roasted,"Any protein",Any,Vegan,High FODMAP
+Spinach,Vegetable,cooked,100,23,2.9,3.8,2.4,0.3,0,0.4,70,true,0.1,23,2.9,3.6,0.4,raw,Sautéed or steamed,"Eggs,Chicken",Any,Vegan,None
+Asparagus,Vegetable,cooked,100,22,2.4,4,2,0.2,0.1,1.3,14,true,0.95,20,2.2,3.9,0.1,raw,Grilled or roasted,"Salmon,Steak",Any,Vegan,High FODMAP
+Green Beans,Vegetable,cooked,100,35,1.9,8,3.2,0.3,0.1,1.5,6,true,0.95,31,1.8,7,0.1,raw,Steamed or sautéed,"Chicken,Beef",Any,Vegan,None
+Brussels Sprouts,Vegetable,cooked,100,36,2.6,7.1,3.5,0.5,0.1,1.7,21,true,0.95,43,3.4,9,0.3,raw,Roasted for best flavor,"Pork,Chicken",Dinner,Vegan,High FODMAP
+Cauliflower,Vegetable,cooked,100,23,1.8,4.1,2.3,0.5,0.1,1.5,16,true,0.95,25,1.9,5,0.3,raw,Can make rice substitute,"Any protein",Any,Vegan,High FODMAP
+Zucchini,Vegetable,cooked,100,17,1.1,2.7,1,0.4,0.1,1.7,3,true,0.9,17,1.2,3.1,0.3,raw,Grilled or spiralized,"Pasta,Chicken",Any,Vegan,None
+Bell Peppers (Red),Vegetable,cooked,100,28,0.9,5.5,1.2,0.2,0,3.8,2,true,0.95,31,1,6,0.3,raw,Roasted or sautéed,"Stir-fry,Fajitas",Any,Vegan,None
+Mushrooms (White),Vegetable,cooked,100,28,2.2,5.3,2.2,0.5,0.1,2.4,6,true,0.5,22,3.1,3.3,0.3,raw,Sautéed or grilled,"Eggs,Steak",Any,Vegan,High FODMAP
+Carrots,Vegetable,cooked,100,35,0.8,8.2,3,0.2,0,3.4,58,true,0.95,41,0.9,10,0.2,raw,Steamed or roasted,"Roasts,Stir-fry",Any,Vegan,None
+Cucumber,Vegetable,raw,100,16,0.7,3.6,0.5,0.1,0,1.7,2,false,,,,,,,Usually eaten raw,"Salads,Sandwiches",Any,Vegan,None
+Lettuce (Cos/Romaine),Vegetable,raw,100,17,1.2,3.3,2.1,0.3,0.1,1.2,8,false,,,,,,,Eaten raw,"Salads,Wraps",Any,Vegan,None
+Tomatoes,Vegetable,raw,100,18,0.9,3.9,1.2,0.2,0,2.6,5,false,,,,,,,Can be eaten raw or cooked,"Salads,Pasta",Any,Vegan,None
+Kale,Vegetable,cooked,100,28,1.9,5.6,2,0.4,0.1,1.3,23,true,0.3,49,4.3,9,0.9,raw,Sautéed or in soups,"Eggs,Beans",Any,Vegan,None
+Beetroot,Vegetable,cooked,100,44,1.7,10,2,0.2,0,8,77,true,0.95,43,1.6,10,0.2,raw,Roasted or boiled,"Salads,Goat cheese",Any,Vegan,High FODMAP
+Pumpkin,Vegetable,cooked,100,20,0.7,4.9,1.1,0.1,0,2.2,1,true,0.85,26,1,6.5,0.1,raw,Roasted or in soup,"Soups,Curries",Any,Vegan,None
+Onions,Vegetable,cooked,100,44,1.4,10.1,1.4,0.2,0,4.7,4,true,0.85,40,1.1,9.3,0.1,raw,Caramelized or sautéed,"Any dish,Base ingredient",Any,Vegan,High FODMAP
+Garlic,Vegetable,raw,100,149,6.4,33,2.1,0.5,0.1,1,17,false,,,,,,,1 clove = 3g,"Any dish,Marinades",Any,Vegan,High FODMAP
+Celery,Vegetable,raw,100,16,0.7,3,1.6,0.2,0,1.3,80,false,,,,,,,Minimal cooking loss,"Soups,Snacking",Any,Vegan,None
+Broccolini,Vegetable,cooked,100,35,2.8,6,2.4,0.4,0.1,1.5,25,true,0.95,33,3,5.8,0.4,raw,Tender stems and florets,"Any protein,Asian dishes",Any,Vegan,High FODMAP
+Snow Peas,Vegetable,cooked,100,42,2.8,7.4,2.6,0.2,0,4,4,true,0.95,40,2.7,7,0.2,raw,Eat pods and peas,"Stir-fry,Asian dishes",Any,Vegan,High FODMAP
+Peas (Green),Vegetable,cooked,100,84,5.4,16,5.5,0.4,0.1,5.9,5,true,0.9,81,5.2,14.5,0.4,raw,Sweet flavor,"Mashed potato,Curry",Any,Vegan,High FODMAP
+Parsnips,Vegetable,cooked,100,71,1.3,17,3.6,0.3,0,4.8,10,true,0.85,75,1.2,18,0.3,raw,Sweet when roasted,"Roasts,Soups",Any,Vegan,None
+Eggplant,Vegetable,cooked,100,35,0.8,8.7,2.5,0.2,0,3.5,1,true,0.8,25,1,6,0.2,raw,Absorbs oil when cooking,"Mediterranean dishes,Curry",Any,Vegan,None
+Rocket (Arugula),Vegetable,raw,100,25,2.6,3.7,1.6,0.7,0.1,2,27,false,,,,,,,Peppery flavor,"Salads,Pizza topping",Any,Vegan,None
+Apple,Fruit,raw,100,52,0.3,14,2.4,0.2,0,10.4,1,false,,,,,,,Medium apple = 180g,"Yogurt,Nut butter",Snack,Vegan,High FODMAP
+Banana,Fruit,raw,100,89,1.1,23,2.6,0.3,0.1,12.2,1,false,,,,,,,Medium banana = 120g,"Oats,Smoothies",Breakfast/Pre-workout,Vegan,None
+Blueberries,Fruit,raw,100,57,0.7,14,2.4,0.3,0,10,1,false,,,,,,,High in antioxidants,"Yogurt,Oatmeal",Breakfast/Snack,Vegan,None
+Strawberries,Fruit,raw,100,32,0.7,7.7,2,0.3,0,4.9,1,false,,,,,,,Lower calorie berry option,"Yogurt,Salads",Snack,Vegan,None
+Orange,Fruit,raw,100,47,0.9,12,2.4,0.1,0,9.4,0,false,,,,,,,Medium orange = 150g,"By itself,Salads",Snack,Vegan,None
+Grapes (Red),Fruit,raw,100,69,0.7,18,0.9,0.2,0.1,15.5,2,false,,,,,,,Higher sugar fruit,"Cheese,Nuts",Snack,Vegan,None
+Watermelon,Fruit,raw,100,30,0.6,8,0.4,0.2,0,6.2,1,false,,,,,,,High water content,"Feta,Mint",Snack,Vegan,High FODMAP
+Pineapple,Fruit,raw,100,50,0.5,13,1.4,0.1,0,9.9,1,false,,,,,,,Contains bromelain enzyme,"Cottage cheese,Ham",Snack,Vegan,None
+Mango,Fruit,raw,100,60,0.8,15,1.6,0.4,0.1,13.7,1,false,,,,,,,Medium mango = 200g,"Yogurt,Smoothies",Snack,Vegan,High FODMAP
+Pear,Fruit,raw,100,57,0.4,15,3.1,0.1,0,9.8,1,false,,,,,,,Medium pear = 180g,"Cheese,Salads",Snack,Vegan,High FODMAP
+Kiwi,Fruit,raw,100,61,1.1,15,3,0.5,0.1,9,3,false,,,,,,,High in vitamin C,"Yogurt,Smoothies",Snack,Vegan,None
+Raspberries,Fruit,raw,100,52,1.2,12,6.5,0.7,0.2,4.4,1,false,,,,,,,Highest fiber berry,"Yogurt,Oatmeal",Snack,Vegan,None
+Dates (Medjool),Fruit,ready,24,66,0.4,18,1.6,0,0,16,0,false,,,,,,,1 large date = 24g,"Pre-workout,Energy balls",Snack,Vegan,High FODMAP
+Raisins,Fruit,ready,43,129,1.3,34,1.6,0.2,0,26,5,false,,,,,,,1 small box = 43g,"Oatmeal,Trail mix",Snack,Vegan,None
+Mandarin,Fruit,raw,100,53,0.8,13.3,1.8,0.3,0,10.6,2,false,,,,,,,Medium mandarin = 90g,"By itself,Salads",Snack,Vegan,None
+Peach,Fruit,raw,100,39,0.9,9.5,1.5,0.3,0,8.4,0,false,,,,,,,Medium peach = 150g,"Yogurt,Smoothies",Snack,Vegan,High FODMAP
+Rockmelon (Cantaloupe),Fruit,raw,100,34,0.8,8.2,0.9,0.2,0,7.9,16,false,,,,,,,Sweet orange flesh,"Prosciutto,Fruit salad",Snack,Vegan,None
+Avocado,Fat,raw,100,160,2,8.5,6.7,14.7,2.1,0.7,7,false,,,,,,,1/2 medium = 100g,"Toast,Eggs",Any,Vegan,High FODMAP
+Olive Oil (Extra Virgin),Fat,ready,14,119,0,0,0,13.5,1.9,0,0,false,,,,,,,1 tablespoon = 14g,"Cooking,Salads",Any,Vegan,None
+Coconut Oil,Fat,ready,14,117,0,0,0,13.5,11.8,0,0,false,,,,,,,1 tablespoon = 14g,"Cooking,Coffee",Any,Vegan,None
+Almonds,Fat,raw,28,161,6,6,3.5,14,1.1,1.2,0,false,,,,,,,1 ounce = 28g,"Snacking,Salads",Snack,Vegan,Nuts
+Walnuts,Fat,raw,28,183,4.3,3.8,1.9,18.3,1.7,0.7,1,false,,,,,,,1 ounce = 28g,"Oatmeal,Salads",Snack,Vegan,Nuts
+Peanut Butter (Natural),Fat,ready,32,188,8,8,2.6,16,3.3,3,147,false,,,,,,,2 tablespoons = 32g,"Toast,Apples",Snack,Vegan,Nuts
+Almond Butter,Fat,ready,32,196,7,6,3.3,18,1.4,2,73,false,,,,,,,2 tablespoons = 32g,"Toast,Smoothies",Snack,Vegan,Nuts
+Cashew Butter,Fat,ready,32,188,5.6,9,1,15.5,3.1,2,98,false,,,,,,,2 tablespoons = 32g,"Smoothies,Asian sauces",Snack,Vegan,Nuts
+Sunflower Seed Butter,Fat,ready,32,185,5.5,7.8,3.2,16,1.7,2.5,90,false,,,,,,,2 tablespoons = 32g,"Toast,Baking",Snack,Vegan,None
+Chia Seeds,Fat,ready,28,138,4.7,12,9.8,8.7,0.9,0,5,false,,,,,,,2 tablespoons = 28g,"Yogurt,Smoothies",Breakfast,Vegan,None
+Flaxseeds (Ground),Fat,ready,10,55,1.9,3,2.8,4.3,0.4,0.2,3,false,,,,,,,1 tablespoon = 10g,"Smoothies,Oatmeal",Breakfast,Vegan,None
+Tahini,Fat,ready,30,178,5.3,6.4,2.8,16.1,2.2,0.3,105,false,,,,,,,2 tablespoons = 30g,"Dressings,Vegetables",Any,Vegan,None
+MCT Oil,Fat,ready,14,117,0,0,0,13,12.5,0,0,false,,,,,,,1 tablespoon = 14g,"Coffee,Smoothies",Morning,Vegan,None
+Butter,Fat,ready,14,100,0.1,0,0,11.3,7.1,0,90,false,,,,,,,1 tablespoon = 14g,"Cooking,Toast",Any,Plant,Lactose
+Cheese (Cheddar),Fat,ready,28,113,7,0.4,0,9.3,5.9,0.1,174,false,,,,,,,1 ounce = 28g,"Sandwiches,Eggs",Any,Plant,Lactose
+Pumpkin Seeds,Fat,ready,28,151,7,5,1.1,13,2.3,0.4,5,false,,,,,,,1 oz = 28g,"Salads,Snacking",Snack,Vegan,None
+Sunflower Seeds,Fat,ready,28,163,5.8,5.7,2.4,14,1.5,0.7,1,false,,,,,,,1 oz = 28g,"Salads,Trail mix",Snack,Vegan,None
+Avocado Oil,Fat,ready,14,124,0,0,0,14,1.6,0,0,false,,,,,,,1 tablespoon = 14g,"High-heat cooking,Salads",Any,Vegan,None
+Sesame Oil,Fat,ready,14,120,0,0,0,13.6,1.9,0,0,false,,,,,,,1 tablespoon = 14g,"Asian dishes,Marinades",Any,Vegan,None
+Grapeseed Oil,Fat,ready,14,120,0,0,0,13.6,1.3,0,0,false,,,,,,,1 tablespoon = 14g,"High-heat cooking,Baking",Any,Vegan,None
+Walnut Oil,Fat,ready,14,120,0,0,0,13.6,1.2,0,0,false,,,,,,,1 tablespoon = 14g,"Salad dressing,Finishing oil",Any,Vegan,None
+Hemp Seeds,Fat,ready,30,166,9.5,2.6,1.2,14.6,1.4,0.5,0,false,,,,,,,3 tablespoons = 30g,"Smoothies,Yogurt",Any,Vegan,None
+Macadamia Nuts,Fat,ready,28,204,2.2,3.9,2.4,21.5,3.4,1.3,1,false,,,,,,,1 oz = 28g,"Snacking,Baking",Snack,Vegan,Nuts
+Cashews,Fat,raw,28,157,5.2,8.6,0.9,12.4,2.2,1.7,3,false,,,,,,,1 oz = 28g,"Stir-fry,Vegan cheese",Snack,Vegan,Nuts
+Brazil Nuts,Fat,raw,28,186,4,3.5,2.1,19,4.3,0.7,1,false,,,,,,,1 oz = 28g,"Snacking,Selenium source",Snack,Vegan,Nuts
+Pecans,Fat,raw,28,196,2.6,3.9,2.7,20.4,1.8,1.1,0,false,,,,,,,1 oz = 28g,"Salads,Baking",Snack,Vegan,Nuts
+Ghee,Fat,ready,14,112,0,0,0,12.7,7.9,0,0,false,,,,,,,1 tablespoon = 14g,"Indian cooking,High-heat",Any,Plant,Lactose
+Whey Protein Isolate,Supplement,ready,30,110,25,1,0,0.5,0.2,1,130,false,,,,,,,1 scoop = 30g,"Water,Smoothies",Post-workout,Plant,Lactose
+Plant Protein Powder,Supplement,ready,30,120,21,4,2,2,0.3,1,300,false,,,,,,,1 scoop = 30g,"Water,Smoothies",Post-workout,Vegan,None
+Hemp Protein Powder,Supplement,ready,30,116,15,8,8,3,0.3,1,0,false,,,,,,,1 scoop = 30g,"Smoothies,Oatmeal",Any,Vegan,None
+Pea Protein Isolate,Supplement,ready,30,105,23,2,1,0.5,0.1,0.5,250,false,,,,,,,1 scoop = 30g,"Water,Smoothies",Post-workout,Vegan,None
+Egg White Protein Powder,Supplement,ready,30,105,24,2,0,0,0,0,190,false,,,,,,,1 scoop = 30g,"Smoothies,Baking",Any,Plant,None
+Collagen Peptides,Supplement,ready,20,72,18,0,0,0,0,0,100,false,,,,,,,2 scoops = 20g,"Coffee,Smoothies",Any,Meat,None
+Black Beans,Legume,cooked,100,132,8.9,24,8.7,0.5,0.1,0.3,1,true,2.5,341,21.6,63,1.4,dry,From canned or boiled,"Rice,Tacos",Any,Vegan,High FODMAP
+Chickpeas,Legume,cooked,100,164,8.9,27,7.6,2.6,0.3,4.8,7,true,2.5,364,19,61,6,dry,From canned or boiled,"Salads,Curries",Any,Vegan,High FODMAP
+Lentils (Red),Legume,cooked,100,116,9,20,7.9,0.4,0.1,1.8,2,true,2.5,358,24,60,1.1,dry,Quick cooking variety,"Curries,Soups",Any,Vegan,High FODMAP
+Edamame,Legume,cooked,100,121,11.9,8.9,5.2,5.2,0.6,2.2,6,false,,,,,,,Shelled,"Asian dishes,Salads",Snack,Vegan,None
+Chickpea Flour,Legume,dry,100,387,22,58,11,7,0.7,11,64,false,,,,,,,Also called besan,"Flatbreads,Fritters",Any,Vegan,None
+Vital Wheat Gluten,Protein,dry,100,370,75,14,0.6,1.9,0.3,0,29,false,,,,,,,Makes seitan,"Homemade seitan",Any,Vegan,Gluten
+Kidney Beans,Legume,cooked,100,127,8.7,23,6.4,0.5,0.1,0.3,2,true,2.5,333,23.5,60,1.1,dry,From canned or boiled,"Chili,Rice",Any,Vegan,High FODMAP
+Cannellini Beans,Legume,cooked,100,139,9.7,25,6.3,0.4,0.1,0.6,6,true,2.5,335,21,61,0.9,dry,White kidney beans,"Soups,Salads",Any,Vegan,High FODMAP
+Pinto Beans,Legume,cooked,100,143,9,26,9,0.7,0.2,0.3,2,true,2.5,347,21,63,1.2,dry,From canned or boiled,"Mexican dishes,Refried beans",Any,Vegan,High FODMAP
+Coffee (Black),Beverage,ready,240,2,0.3,0,0,0,0,0,5,false,,,,,,,1 cup = 240ml,"Breakfast",Morning,Vegan,None
+Green Tea,Beverage,ready,240,2,0.5,0,0,0,0,0,7,false,,,,,,,1 cup = 240ml,"Any time",Any,Vegan,None
+Orange Juice,Beverage,ready,240,112,1.7,26,0.5,0.5,0.1,20.8,2,false,,,,,,,Fresh squeezed best,"Breakfast",Morning,Vegan,None
+Almond Milk (Unsweetened),Beverage,ready,240,30,1,1,0.5,2.5,0.2,0,170,false,,,,,,,1 cup = 240ml,"Smoothies,Coffee",Any,Vegan,None
+Milk (2%),Beverage,ready,240,122,8,12,0,5,3,12,100,false,,,,,,,1 cup = 240ml,"Cereal,Coffee",Any,Plant,Lactose
+Milk (Whole),Beverage,ready,240,150,8,12,0,8,4.5,12,98,false,,,,,,,1 cup = 240ml,"Cereal,Coffee",Any,Plant,Lactose
+Milk (Skim),Beverage,ready,240,83,8,12,0,0.2,0.1,12,103,false,,,,,,,1 cup = 240ml,"Cereal,Coffee",Any,Plant,Lactose
+Coconut Water,Beverage,ready,240,45,1.7,8.9,2.6,0.5,0.4,6.3,252,false,,,,,,,1 cup = 240ml,"Post-workout,Smoothies",Any,Vegan,None
+Sports Drink (Regular),Beverage,ready,240,50,0,14,0,0,0,14,110,false,,,,,,,1 cup = 240ml,"During training",During workout,Vegan,None
+Wine (Red),Beverage,ready,150,125,0.1,3.8,0,0,0,0.9,6,false,,,,,,,5 oz = 150ml,"Dinner,Social",Evening,Vegan,None
+Beer (Light),Beverage,ready,355,103,0.9,5.8,0,0,0,0.3,14,false,,,,,,,12 oz can = 355ml,"Social occasions",Evening,Vegan,Gluten
+Bone Broth,Beverage,ready,240,40,9,0,0,0.5,0,0,380,false,,,,,,,1 cup = 240ml,"Sipping,Soup base",Any,Meat,None
+Vegetable Broth,Beverage,ready,240,13,0.5,2.5,0.5,0.1,0,1.5,940,false,,,,,,,1 cup = 240ml,"Soup base,Volume eating",Any,Vegan,None
+Soy Sauce (Reduced Sodium),Sauce,ready,15,10,1,1,0,0,0,0.5,575,false,,,,,,,1 tablespoon = 15ml,"Asian dishes,Stir-fry",Any,Vegan,Gluten
+Balsamic Vinegar,Sauce,ready,15,14,0,3,0,0,0,2.4,4,false,,,,,,,1 tablespoon = 15ml,"Salads,Marinades",Any,Vegan,None
+Hot Sauce (Sriracha),Sauce,ready,5,5,0.1,1,0,0,0,1,140,false,,,,,,,1 teaspoon = 5ml,"Eggs,Asian dishes",Any,Vegan,None
+Tomato Sauce (No Sugar),Sauce,ready,125,35,1.5,6,1.5,0.5,0,4,440,false,,,,,,,1/2 cup = 125ml,"Pasta,Pizza",Any,Vegan,None
+Tzatziki,Sauce,ready,30,30,2,2,0,2,1.3,1.5,100,false,,,,,,,2 tablespoons = 30g,"Greek dishes,Vegetables",Any,Plant,Lactose
+Hummus,Sauce,ready,30,70,2,6,2,4.5,0.6,0,120,false,,,,,,,2 tablespoons = 30g,"Vegetables,Wraps",Any,Vegan,None
+Pesto (Basil),Sauce,ready,15,80,1.5,1,0.5,8,1.5,0,125,false,,,,,,,1 tablespoon = 15g,"Pasta,Chicken",Any,Plant,Nuts;Lactose
+BBQ Sauce (Sugar Free),Sauce,ready,30,10,0,2,0,0,0,0,290,false,,,,,,,2 tablespoons = 30ml,"Grilled meats",Any,Vegan,None
+Mustard (Dijon),Sauce,ready,5,5,0.3,0.3,0.2,0.3,0,0,135,false,,,,,,,1 teaspoon = 5g,"Sandwiches,Dressings",Any,Vegan,None
+Salsa (Fresh),Sauce,ready,30,10,0.5,2,0.5,0,0,1,150,false,,,,,,,2 tablespoons = 30g,"Mexican dishes,Eggs",Any,Vegan,None
+Mayonnaise,Sauce,ready,15,94,0.1,0.1,0,10.3,1.6,0.1,88,false,,,,,,,1 tablespoon = 15g,"Sandwiches,Tuna",Any,Plant,None
+Mayonnaise (Light),Sauce,ready,15,35,0,1,0,3.5,0.5,0.5,125,false,,,,,,,1 tablespoon = 15g,"Sandwiches,Wraps",Any,Plant,None
+Ketchup,Sauce,ready,17,19,0.3,4.7,0.1,0,0,3.7,154,false,,,,,,,1 tablespoon = 17g,"Burgers,Fries",Any,Vegan,None
+Honey,Sauce,ready,21,64,0.1,17,0,0,0,17,1,false,,,,,,,1 tablespoon = 21g,"Yogurt,Tea",Any,Vegan,None
+Ranch Dressing,Sauce,ready,30,145,0.3,1.4,0,15.3,2.4,1.2,260,false,,,,,,,2 tablespoons = 30g,"Salads,Veggies",Any,Plant,Lactose
+Caesar Dressing,Sauce,ready,30,155,1.2,1,0,16.5,2.6,0.8,320,false,,,,,,,2 tablespoons = 30g,"Salads,Chicken",Any,Plant,Lactose
+Vegemite,Sauce,ready,5,11,1.3,1.2,0,0,0,0,173,false,,,,,,,1 teaspoon = 5g,"Toast,Crackers",Breakfast,Vegan,High FODMAP
+Maple Syrup,Sauce,ready,20,52,0,13.4,0,0,0,12,2,false,,,,,,,1 tablespoon = 20g,"Pancakes,Oatmeal",Breakfast,Vegan,None
+Teriyaki Sauce,Sauce,ready,15,16,1.1,2.8,0,0,0,2.5,690,false,,,,,,,1 tablespoon = 15g,"Stir-fry,Marinades",Any,Vegan,Gluten
+Protein Bar (Quest),Snack,ready,60,190,21,4,14,8,1,1,140,false,,,,,,,1 bar = 60g,"On-the-go",Snack,Plant,Lactose;Nuts
+Popcorn (Air-popped),Snack,ready,8,31,1,6.2,1.2,0.4,0.1,0,1,false,,,,,,,1 cup popped = 8g,"Movie night",Snack,Vegan,None
+Beef Jerky,Snack,ready,28,116,9.4,3.1,0.5,7.3,3.1,2.2,590,false,,,,,,,1 ounce = 28g,"On-the-go",Snack,Meat,None
+Dark Chocolate (70%),Snack,ready,28,170,2.2,13,3.1,12,7,7.8,20,false,,,,,,,1 ounce = 28g,"Dessert,Mindful treat",Snack,Vegan,None
+Tim Tams,Snack,ready,18,95,0.9,11.5,0.4,5,2.8,8.3,50,false,,,,,,,1 biscuit = 18g,"Tea,Special treat",Snack,Plant,Gluten;Lactose
+Crackers (Water),Snack,ready,16,66,1.5,11,0.5,1.8,0.3,0,98,false,,,,,,,4 crackers = 16g,"Cheese,Hummus",Snack,Vegan,Gluten
+Pretzels,Snack,ready,30,108,2.9,23,1,0.9,0.2,0.7,385,false,,,,,,,1 oz = 30g,"Snacking,Hummus",Snack,Vegan,Gluten
+Trail Mix,Snack,ready,30,131,4,13,2,8.5,1.6,8,61,false,,,,,,,1/4 cup = 30g,"Hiking,On-the-go",Snack,Vegan,Nuts
+Rice Crackers (Flavored),Snack,ready,30,110,2,24,0.5,1,0.2,2,220,false,,,,,,,~15 mini crackers = 30g,"Snacking,Dips",Snack,Vegan,None
+Protein Chips,Snack,ready,28,140,12,5,1,8,1.5,1,220,false,,,,,,,1 bag = 28g,"High-protein snack",Snack,Plant,Lactose
+Veggie Straws,Snack,ready,28,130,0.5,19,0.5,6,0.5,0,290,false,,,,,,,1 oz = 28g,"Kids lunch,Snacking",Snack,Vegan,None
+Granola Bar (Chewy),Snack,ready,24,96,1.3,18,0.9,2.1,0.5,7,76,false,,,,,,,1 bar = 24g,"Lunchbox,On-the-go",Snack,Vegan,Gluten
+Fruit Leather,Snack,ready,20,60,0,16,1,0,0,12,10,false,,,,,,,1 strip = 20g,"Kids snack,Lunchbox",Snack,Vegan,None
+Dried Mango,Snack,ready,40,128,0.8,32,2.4,0.5,0.1,28,12,false,,,,,,,1/4 cup = 40g,"Trail mix,Snacking",Snack,Vegan,High FODMAP
+Yogurt Raisins,Snack,ready,30,124,1.2,22,0.8,4.2,3.8,20,22,false,,,,,,,Small handful = 30g,"Movie snack,Trail mix",Snack,Plant,Lactose
+Seaweed Snacks,Snack,ready,5,20,1.5,1,0.5,2,0,0,65,false,,,,,,,1 package = 5g,"Low-cal snack",Snack,Vegan,None
+Energy Balls (Date-Nut),Snack,ready,25,95,2.5,12,1.8,4.5,1.5,9,35,false,,,,,,,1 ball = 25g,"Pre-workout,Snack",Snack,Vegan,Nuts
+Cheese Cubes (Cheddar),Snack,ready,30,120,7.5,0.5,0,10,6.3,0.1,186,false,,,,,,,~6 cubes = 30g,"Wine pairing,Snacking",Snack,Plant,Lactose
+Pita Chips,Snack,ready,28,130,3,19,1,4.5,0.7,0.5,150,false,,,,,,,~10 chips = 28g,"Hummus,Dips",Snack,Vegan,Gluten
+Chocolate Almonds,Snack,ready,30,153,3.5,14,2.3,10.5,4.5,11,15,false,,,,,,,~8 almonds = 30g,"Dessert,Special treat",Snack,Vegan,Nuts
+Mini Muffin (Blueberry),Snack,ready,30,90,1.5,14,0.5,3.5,0.5,7,110,false,,,,,,,1 mini = 30g,"Coffee,Morning tea",Snack,Plant,Gluten;Lactose
+Anzac Biscuits,Snack,ready,25,110,1.5,14,1,5.5,2.5,6,85,false,,,,,,,1 biscuit = 25g,"Tea,Australian treat",Snack,Vegan,Gluten
+Lamingtons,Snack,ready,60,180,2,26,1.5,8,5,18,120,false,,,,,,,1 piece = 60g,"Tea,Australian treat",Snack,Plant,Gluten;Lactose
+Corn Chips,Snack,ready,28,140,2,18,1.5,7,1,0,115,false,,,,,,,~12 chips = 28g,"Salsa,Guacamole",Snack,Vegan,None
+Cookies (Choc Chip),Snack,ready,33,160,2,21,0.5,8,2.5,11,110,false,,,,,,,1 medium = 33g,"Milk,Dessert",Snack,Plant,Gluten;Lactose
+Mixed Nuts (Salted),Snack,ready,28,168,5,7,2.5,15,2,1.5,95,false,,,,,,,1 oz = 28g,"Snacking,Party mix",Snack,Vegan,Nuts
+Apple Chips,Snack,ready,20,80,0,19,2,0,0,14,0,false,,,,,,,1/3 cup = 20g,"Healthy snack",Snack,Vegan,None
+Banana Chips,Snack,ready,30,147,0.6,17,2.2,9.5,8.2,10,2,false,,,,,,,1/4 cup = 30g,"Trail mix,Snacking",Snack,Vegan,None
+Cheese Crackers,Snack,ready,30,139,3,19,0.5,6,1.5,0,298,false,,,,,,,~30 crackers = 30g,"Kids lunch,Snacking",Snack,Plant,Gluten;Lactose
+Edamame (Dry Roasted),Snack,ready,30,130,14,9,8,4,0.5,1,140,false,,,,,,,1/4 cup = 30g,"High-protein snack",Snack,Vegan,None
+Greek Yogurt Parfait,Snack,ready,150,180,12,25,2,4,2.5,18,85,false,,,,,,,1 small cup = 150g,"Breakfast,Snack",Snack,Plant,Lactose
+Nut Bar (Kind Bar),Snack,ready,40,200,6,16,3,15,1.5,5,125,false,,,,,,,1 bar = 40g,"On-the-go,Hiking",Snack,Vegan,Nuts
+Cottage Cheese Bowl,Snack,ready,125,115,14,8,0.5,3,2,6,450,false,,,,,,,1/2 cup w/ fruit = 125g,"High-protein snack",Snack,Plant,Lactose
+Protein Pudding,Snack,ready,150,130,20,8,1,3,1.5,6,180,false,,,,,,,1 container = 150g,"Dessert alternative",Snack,Plant,Lactose
+Sugar-Free Jello,Snack,ready,125,10,1,0,0,0,0,0,80,false,,,,,,,1/2 cup = 125g,"Low-cal dessert",Snack,Vegan,None
+Pickles,Snack,ready,65,7,0.3,1.5,0.8,0.1,0,1.1,785,false,,,,,,,1 medium = 65g,"Low-cal snack",Snack,Vegan,None
+Turkey Sticks,Snack,ready,28,70,10,2,0,2.5,1,1,480,false,,,,,,,1 stick = 28g,"High-protein snack",Snack,Meat,None
+Shapes (BBQ),Snack,ready,25,124,2.1,15.5,0.6,6,2.8,1.2,235,false,,,,,,,~20 crackers = 25g,"Australian favorite",Snack,Plant,Gluten;Lactose
+Twisties,Snack,ready,20,106,1.1,10.8,0.4,6.5,2.9,0.4,246,false,,,,,,,Small bag = 20g,"Party snack",Snack,Plant,Gluten;Lactose
+Dates (Energy Balls),Snack,ready,40,110,0.8,29,3,0.2,0,25,1,false,,,,,,,2 dates = 40g,"Pre-workout fuel",Snack,Vegan,High FODMAP
+Raisins (Snack Box),Snack,ready,30,90,0.9,24,1.1,0.1,0,18,3,false,,,,,,,Mini box = 30g,"Kids lunch,Quick energy",Snack,Vegan,None
+Protein Cookie,Snack,ready,55,200,16,20,5,8,2,6,200,false,,,,,,,1 cookie = 55g,"Dessert alternative",Snack,Plant,Gluten;Lactose
+Hard Boiled Eggs (2),Snack,ready,100,155,13,1.1,0,10.6,3.3,1.1,124,false,,,,,,,2 eggs = 100g,"Meal prep snack",Snack,Plant,None
+Tuna Pouch (Flavored),Snack,ready,74,70,15,1,0,0.5,0,0,310,false,,,,,,,1 pouch = 74g,"Quick protein",Snack,Fish,None
+All-Purpose Flour,Cooking,ready,100,364,10,76,2.7,1,0.2,0.3,2,false,,,,,,,For breading and baking,"Baking,Breading",Any,Vegan,Gluten
+Almond Flour,Cooking,ready,100,579,21,22,12,50,3.8,4,1,false,,,,,,,Gluten-free alternative,"Baking,Breading",Any,Vegan,Nuts
+Coconut Flour,Cooking,ready,100,443,17,60,37,15,13,6,50,false,,,,,,,High fiber low-carb flour,"Baking,Keto recipes",Any,Vegan,None
+Breadcrumbs,Cooking,ready,100,395,13,72,4.5,5.3,1.2,6,732,false,,,,,,,For coating proteins,"Breading,Topping",Any,Vegan,Gluten
+Panko Breadcrumbs,Cooking,ready,100,383,12,74,3,3.5,0.6,5,650,false,,,,,,,Japanese-style crispy crumbs,"Breading,Topping",Any,Vegan,Gluten
+Cornstarch,Cooking,ready,100,381,0.3,91,0.9,0.1,0,0,9,false,,,,,,,Thickening agent,"Sauces,Stir-fry",Any,Vegan,None
+Sugar (White),Cooking,ready,100,387,0,100,0,0,0,100,1,false,,,,,,,Granulated sugar,"Baking,Beverages",Any,Vegan,None
+Sugar (Brown),Cooking,ready,100,380,0,98,0,0,0,97,39,false,,,,,,,Contains molasses,"Baking,Marinades",Any,Vegan,None
+Stevia (Granulated),Cooking,ready,100,0,0,100,0,0,0,0,0,false,,,,,,,Zero calorie sweetener,"Baking,Beverages",Any,Vegan,None
+Erythritol,Cooking,ready,100,20,0,100,0,0,0,0,0,false,,,,,,,Sugar alcohol sweetener,"Keto baking,Beverages",Any,Vegan,None
+Cocoa Powder,Cooking,ready,100,228,20,58,33,14,8.1,1.8,21,false,,,,,,,Unsweetened,"Baking,Smoothies",Any,Vegan,None
+Vanilla Extract,Cooking,ready,5,14,0,0.6,0,0,0,0.6,9,false,,,,,,,1 tsp = 5ml,"Baking,Flavoring",Any,Vegan,None
+Baking Powder,Cooking,ready,5,5,0,2.5,0,0,0,0,500,false,,,,,,,1 tsp = 5g,"Baking,Leavening",Any,Vegan,None
+Baking Soda,Cooking,ready,5,0,0,0,0,0,0,0,1259,false,,,,,,,1 tsp = 5g,"Baking,Leavening",Any,Vegan,None
+Chicken Stock,Cooking,ready,240,10,1,1,0,0.5,0.2,0.5,380,false,,,,,,,1 cup = 240ml,"Soups,Cooking liquid",Any,Meat,None
+Vegetable Stock,Cooking,ready,240,12,0.4,2.4,0.4,0.1,0,1.2,650,false,,,,,,,1 cup = 240ml,"Soups,Cooking liquid",Any,Vegan,None
+White Wine (Cooking),Cooking,ready,240,200,0.2,6,0,0,0,1.4,10,false,,,,,,,1 cup = 240ml,"Sauces,Deglazing",Any,Vegan,None
+Apple Cider Vinegar,Cooking,ready,15,3,0,0.1,0,0,0,0,5,false,,,,,,,1 tbsp = 15ml,"Dressings,Marinades",Any,Vegan,None
+Red Wine Vinegar,Cooking,ready,15,3,0,0.1,0,0,0,0,1,false,,,,,,,1 tbsp = 15ml,"Dressings,Marinades",Any,Vegan,None
+Rice Vinegar,Cooking,ready,15,3,0,0.1,0,0,0,0,1,false,,,,,,,1 tbsp = 15ml,"Asian dishes,Sushi rice",Any,Vegan,None
+Fish Sauce,Cooking,ready,15,9,1.5,0.7,0,0,0,0.7,1413,false,,,,,,,1 tbsp = 15ml,"Thai cooking,Vietnamese",Any,Fish,None
+Worcestershire Sauce,Cooking,ready,15,11,0,2.7,0,0,0,2.3,165,false,,,,,,,1 tbsp = 15ml,"Marinades,Seasoning",Any,Fish,None
+Tomato Paste,Cooking,ready,100,82,4.3,19,4.1,0.5,0.1,12,59,false,,,,,,,Concentrated tomatoes,"Sauces,Soups",Any,Vegan,None
+Coconut Cream,Cooking,ready,100,330,3.5,6,2,34,30,4,25,false,,,,,,,Thick part of coconut milk,"Curries,Desserts",Any,Vegan,None
+Cornmeal,Cooking,ready,100,370,8.5,79,7.3,3.6,0.5,0.6,7,false,,,,,,,For polenta or breading,"Polenta,Breading",Any,Vegan,None
+Arrowroot Powder,Cooking,ready,100,357,0.3,88,3.4,0.1,0,0,26,false,,,,,,,Grain-free thickener,"Thickening,Baking",Any,Vegan,None
+Psyllium Husk,Cooking,ready,10,35,0,9,8,0,0,0,10,false,,,,,,,1 tbsp = 10g,"Keto baking,Fiber boost",Any,Vegan,None
+Gelatin Powder,Cooking,ready,7,24,6,0,0,0,0,0,40,false,,,,,,,1 tbsp = 7g,"Jellies,Thickening",Any,Meat,None
+Agar Powder,Cooking,ready,7,20,0.5,5,0.5,0,0,0,9,false,,,,,,,1 tbsp = 7g vegan gelatin,"Vegan jellies,Thickening",Any,Vegan,None
+Miso Paste,Cooking,ready,15,30,2,4,1,1,0.2,1,650,false,,,,,,,1 tbsp = 15g,"Soups,Marinades",Any,Vegan,High FODMAP
+Gochujang,Cooking,ready,15,30,0.5,7,0.5,0,0,5,250,false,,,,,,,1 tbsp = 15g,"Korean dishes,Marinades",Any,Vegan,None
+Harissa Paste,Cooking,ready,15,35,0.5,3,1,2.5,0.3,2,200,false,,,,,,,1 tbsp = 15g,"Middle Eastern,Marinades",Any,Vegan,None
+Curry Paste (Red),Cooking,ready,15,40,0.5,4,1,2.5,0.5,3,300,false,,,,,,,1 tbsp = 15g,"Thai curries,Stir-fry",Any,Vegan,None
+Cooking Spray (Olive Oil),Cooking,ready,1,8,0,0,0,1,0.1,0,0,false,,,,,,,1 second spray = 1g,"Non-stick cooking",Any,Vegan,None
+Milk Powder (Full Cream),Cooking,ready,100,496,26,38,0,27,17,38,371,false,,,,,,,For baking,"Baking,Smoothies",Any,Plant,Lactose
+Yeast (Active Dry),Cooking,ready,7,23,3,3,2,0.5,0,0,4,false,,,,,,,1 packet = 7g,"Bread making",Any,Vegan,None
+Heavy Cream,Cooking,ready,240,821,5,7,0,88,55,6.6,86,false,,,,,,,1 cup = 240ml,"Sauces,Whipping",Any,Plant,Lactose
+Half and Half,Cooking,ready,240,315,7.2,10,0,28,17,10,98,false,,,,,,,1 cup = 240ml,"Coffee,Sauces",Any,Plant,Lactose
+Sour Cream,Cooking,ready,230,444,5.4,10,0,44,28,7.8,125,false,,,,,,,1 cup = 230g,"Toppings,Baking",Any,Plant,Lactose
+Cream Cheese,Cooking,ready,100,342,6,4,0,34,19,3.2,321,false,,,,,,,For baking and spreads,"Cheesecake,Frosting",Any,Plant,Lactose
+Parmesan Cheese,Cooking,ready,100,431,38,4,0,29,17,0.9,1529,false,,,,,,,Grated,"Pasta,Caesar salad",Any,Plant,Lactose
+Feta Cheese,Cooking,ready,100,264,14,4,0,21,15,4.1,1116,false,,,,,,,Crumbled,"Greek salads,Mediterranean",Any,Plant,Lactose
+Goat Cheese,Cooking,ready,100,364,22,3,0,30,21,3,515,false,,,,,,,Soft cheese,"Salads,Appetizers",Any,Plant,Lactose
+Rice Wine (Mirin),Cooking,ready,15,43,0,7.5,0,0,0,7.5,3,false,,,,,,,1 tbsp = 15ml,"Japanese cooking,Teriyaki",Any,Vegan,None
+Oyster Sauce,Cooking,ready,15,9,0.2,2,0,0,0,1,437,false,,,,,,,1 tbsp = 15ml,"Stir-fry,Asian dishes",Any,Fish,Shellfish
+Hoisin Sauce,Cooking,ready,15,35,0.5,7,0.5,0.5,0,4.5,258,false,,,,,,,1 tbsp = 15ml,"Asian glazes,Duck sauce",Any,Vegan,Gluten
+Tomato Sauce (Canned),Cooking,ready,125,35,1.5,8,2,0.3,0,5,480,false,,,,,,,1/2 cup = 125ml,"Pasta base,Pizza",Any,Vegan,None
+Peanut Oil,Cooking,ready,14,124,0,0,0,14,2.4,0,0,false,,,,,,,1 tbsp = 14g,"High-heat cooking,Asian",Any,Vegan,Nuts
+Lard,Cooking,ready,14,115,0,0,0,12.8,5,0,0,false,,,,,,,1 tbsp = 14g,"Pastry,Traditional cooking",Any,Meat,None
+Nutritional Yeast Flakes,Cooking,ready,15,45,6,5,3,0.5,0.1,0,10,false,,,,,,,1/4 cup = 15g,"Vegan cheese flavor",Any,Vegan,None
+Dextrose,Supplement,ready,100,400,0,100,0,0,0,100,0,false,,,,,,,Post-workout carbs,"Post-workout shakes",Post-workout,Vegan,None
+Maltodextrin,Supplement,ready,100,380,0,95,0,0,0,0,0,false,,,,,,,Fast-digesting carbs,"Post-workout shakes",Post-workout,Vegan,None
+Bacon,Protein,cooked,100,541,37,1.4,0,42,14,0,1717,true,0.25,287,12,0,28,raw,Loses ~75% weight when cooked,"Eggs,Breakfast sandwich",Breakfast,Meat,None
+Turkey Bacon,Protein,cooked,100,218,29,4,0,9.6,2.8,3.8,1917,true,0.4,108,13,1,6,raw,Loses ~60% weight when cooked,"Eggs,Breakfast wrap",Breakfast,Meat,None
+Breakfast Sausage,Protein,cooked,100,339,19,2.6,0,28,10,1.6,848,true,0.65,297,14,1.5,26,raw,Patties or links,"Eggs,Pancakes",Breakfast,Meat,None
+Ham (Deli Sliced),Protein,ready,100,145,21,2,0,6,2,1.5,1203,false,,,,,,,Low sodium options available,"Sandwiches,Omelets",Any,Meat,None
+Turkey (Deli Sliced),Protein,ready,100,104,18,3.5,0,2.3,0.7,2.5,1015,false,,,,,,,Low sodium options available,"Sandwiches,Wraps",Lunch,Meat,None
+Cod,Protein,cooked,100,105,23,0,0,0.9,0.2,0,86,true,0.8,82,18,0,0.7,raw,Baked or grilled,"Vegetables,Lemon",Dinner,Fish,None
+Tilapia,Protein,cooked,100,128,26,0,0,2.7,0.9,0,56,true,0.8,96,20,0,2,raw,Pan-seared or baked,"Rice,Vegetables",Dinner,Fish,None
+Sea Bass,Protein,cooked,100,124,24,0,0,2.6,0.7,0,89,true,0.8,97,18,0,2,raw,Premium white fish,"Asparagus,Wild rice",Dinner,Fish,None
+Canned Salmon,Protein,drained,100,142,23,0,0,5.4,1.3,0,468,false,,,,,,,With bones for calcium,"Salads,Patties",Lunch,Fish,None
+Rotisserie Chicken,Protein,ready,100,184,28,0,0,7.4,2.1,0,383,false,,,,,,,Remove skin to reduce fat,"Salads,Quick meals",Any,Meat,None
+Prosciutto,Protein,ready,100,271,27,0,0,18,6.6,0,1577,false,,,,,,,Thinly sliced Italian ham,"Melon,Pizza",Any,Meat,None
+Pepperoni,Protein,ready,100,494,23,4,0,44,17.6,0,1761,false,,,,,,,Pizza topping,"Pizza,Snacking",Any,Meat,None
+Chorizo,Protein,cooked,100,455,24,2,0,38,14.5,0,1235,true,0.7,273,15,1.5,23,raw,Spanish or Mexican varieties,"Eggs,Paella",Any,Meat,None

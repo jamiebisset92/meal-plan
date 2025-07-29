@@ -1,12 +1,10 @@
-// MODULE 51 - PSYCHOLOGY ANALYSIS
-// Stephanie Sanzo's advanced challenge psychology specialist
-// Processes user data and nutrition calculations to provide personalized psychological coaching
-
 /**
- * Main psychology analysis function
- * @param {Object} userData - User data from Typeform
- * @param {Object} calculations - Results from Module-51-Calculations.js
- * @returns {Object} Complete psychology analysis with Stephanie's coaching approach
+ * Module-2-Psychology.js
+ * Generates personalized psychological coaching strategies
+ * 
+ * @param {Object} userData - User input data
+ * @param {Object} calculations - Results from Module-1-Calculations.js
+ * @returns {Object} Psychological analysis and coaching strategies
  */
 function analyzePsychology(userData, calculations) {
   // Initialize result structure

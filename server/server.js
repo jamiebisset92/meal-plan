@@ -11,8 +11,8 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Import your modules
-const { calculateNutritionTargets } = require('./Module-51-Calculations');
-const { buildPersonalizedNutritionPlan } = require('./Module-58-Meal-Plan');
+const { calculateNutritionTargets } = require('../src/modules/Module-1-Calculations');
+const { buildPersonalizedNutritionPlan } = require('../src/modules/Module-5-Meal-Plan');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -196,6 +196,49 @@ function determineMethodology(answers) {
   // Default to moderate for most users
   return 'moderate';
 }
+
+// API endpoint to save user progress
+app.post('/api/progress/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const progressData = req.body;
+    
+    // Create progress directory if it doesn't exist
+    const progressDir = path.join(__dirname, 'data', 'progress');
+    await fs.mkdir(progressDir, { recursive: true });
+    
+    // Save progress data
+    const progressFile = path.join(progressDir, `${planId}.json`);
+    await fs.writeFile(progressFile, JSON.stringify({
+      ...progressData,
+      lastUpdated: new Date().toISOString()
+    }, null, 2));
+    
+    res.json({ success: true, message: 'Progress saved' });
+  } catch (error) {
+    console.error('Error saving progress:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// API endpoint to load user progress
+app.get('/api/progress/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const progressFile = path.join(__dirname, 'data', 'progress', `${planId}.json`);
+    
+    try {
+      const data = await fs.readFile(progressFile, 'utf8');
+      res.json({ success: true, data: JSON.parse(data) });
+    } catch (error) {
+      // No saved progress yet
+      res.json({ success: true, data: null });
+    }
+  } catch (error) {
+    console.error('Error loading progress:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Generate unique plan ID
 function generatePlanId(userData) {

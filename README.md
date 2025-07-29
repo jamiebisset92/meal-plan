@@ -1,144 +1,160 @@
-# 🍽️ Stephanie Sanzo's Meal Planning System
+# 🍽️ Meal Planning AI System
 
-A professional webhook-based meal planning system that generates personalized nutrition plans based on Typeform submissions.
+## 📁 Directory Structure
 
-## 🚀 Features
+```
+MEAL PLANNING AI SYSTEM/
+├── src/                          # Source code
+│   ├── modules/                  # Core business logic modules
+│   │   ├── Module-1-Calculations.js      # Nutrition calculations
+│   │   ├── Module-2-Psychology.js        # Psychology & coaching
+│   │   ├── Module-3-Communication.js     # Communication templates
+│   │   ├── Module-4-Supplements.js       # Supplement analysis
+│   │   ├── Module-5-Meal-Plan.js         # Meal plan generation
+│   │   └── Module-6-Interactive-HTML.js  # HTML generation
+│   ├── templates/                # Meal templates
+│   │   ├── meal-templates.js              # Main template aggregator
+│   │   ├── meal-templates-upon-waking.js  # Morning meals
+│   │   ├── meal-templates-day-meals.js    # Lunch meals
+│   │   ├── meal-templates-dinner.js       # Dinner meals
+│   │   ├── meal-templates-post-workout.js # Post-workout meals
+│   │   └── meal-templates-snacks.js       # Snack options
+│   ├── services/                 # Business logic services
+│   │   ├── main-orchestrator.js           # Main coordinator
+│   │   └── meal-template-service.js       # Template selection logic
+│   └── utils/                    # Utility functions
+│       ├── food-database-loader.js        # Database loader
+│       └── supplement-parser.js           # Supplement parsing
+├── data/                         # Data files
+│   ├── Nutritional Database.csv           # Food nutrition data
+│   ├── Typeform-Mapping.json             # Form field mappings
+│   ├── UPDATED Typeform JULY              # Form data
+│   └── Typeform Questions 14-07-25       # Form questions
+├── server/                       # Server applications
+│   ├── dev-server.js                     # Development server
+│   └── server.js                         # Production webhook server
+├── tests/                        # Test files
+│   ├── test-complete-flow.js             # End-to-end tests
+│   ├── test-supplement-*.js              # Supplement tests
+│   ├── test-template-integration.js      # Template tests
+│   └── interactive_meal_planner.html     # Interactive test page
+├── docs/                         # Documentation
+│   ├── Module-58-ORIGINAL.rtf            # Original specifications
+│   ├── Module-40-Coaching-Notes.rtf      # Coaching documentation
+│   ├── README.md                         # This file
+│   ├── DEVELOPMENT-PATH.md               # Development roadmap
+│   ├── ARCHITECTURE-SUMMARY.md           # System architecture
+│   └── *.md                              # Other documentation
+├── assets/                       # Static assets
+│   ├── *.jpg                             # Logo images
+│   └── *.png                             # Logo images
+├── backup/                       # Backup files
+│   └── Nutritional Database-BACKUP.csv   # Database backup
+│   └── Module-5-Meal-Plan-BACKUP.js      # Module backup
+└── public/                       # Web assets
+    ├── logo.jpg                          # Public logo
+    ├── logo.png                          # Public logo
+    └── plans/                            # Generated meal plans
+        └── *.html                        # Individual plan files
+```
 
-- **Automated Meal Plan Generation** - Receives Typeform webhooks and generates personalized meal plans
-- **Precision Nutrition Engine** - Mathematical precision with ±25 calorie tolerance
-- **Multiple Methodologies** - Supports both moderate and extreme carb cycling approaches
-- **Expanded Food Database** - 147+ foods with user preferences prioritization
-- **Unique URL Access** - Each client gets a personalized URL for their meal plan
-- **Mobile Responsive** - Beautiful, professional meal plans that work on all devices
+## 🔄 Processing Flow
 
-## 📋 Prerequisites
+The modules are now numbered in their logical processing order:
 
-- Node.js (v14 or higher)
-- npm or yarn
-- Typeform account with configured form
+1. **Module-1-Calculations.js** - Calculates nutrition targets based on user data
+2. **Module-2-Psychology.js** - Analyzes psychological factors and coaching needs
+3. **Module-3-Communication.js** - Generates personalized communication templates
+4. **Module-4-Supplements.js** - Analyzes supplement needs and generates recommendations
+5. **Module-5-Meal-Plan.js** - Generates precision meal plans with ±25 calorie accuracy
+6. **Module-6-Interactive-HTML.js** - Creates interactive meal plan HTML interfaces
 
-## 🛠️ Installation
+## 🚀 Getting Started
 
-1. Clone the repository:
+### Development Server (UI Testing)
 ```bash
-git clone https://github.com/jamiebisset92/meal-plan.git
-cd meal-plan
+npm run dev-ui
+# or
+node server/dev-server.js
 ```
+Opens: http://localhost:3001
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```env
-PORT=3000
-BASE_URL=http://localhost:3000
-# Add email configuration if needed
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-```
-
-## 🏃‍♂️ Running Locally
-
-### Development mode (with auto-reload):
-```bash
-npm run dev
-```
-
-### Production mode:
+### Production Webhook Server
 ```bash
 npm start
+# or
+node server/server.js
 ```
+Opens: http://localhost:3000
 
-Your server will be available at `http://localhost:3000`
-
-## 🔗 Typeform Webhook Setup
-
-1. Log into your Typeform account
-2. Navigate to your form
-3. Go to Connect → Webhooks
-4. Add webhook URL: 
-   - Local: Use ngrok (see below)
-   - Production: `https://your-domain.com/webhook/typeform`
-
-### Testing with ngrok:
+### Run Tests
 ```bash
-# Install ngrok
-npm install -g ngrok
-
-# Create tunnel
-ngrok http 3000
-
-# Use the ngrok URL in Typeform
+npm test
+# or
+node tests/test-complete-flow.js
 ```
 
-## 📁 Project Structure
+## 🔧 Available Scripts
 
-```
-meal-plan/
-├── server.js                    # Main webhook server
-├── Module-51-Calculations.js    # Nutrition calculations
-├── Module-58-Meal-Plan.js       # Meal plan generation
-├── food-database-loader.js      # Food database interface
-├── Nutritional Database.csv     # Food nutrition data
-├── Typeform-Mapping.json        # Field ID mappings
-├── public/                      # Static files
-│   └── plans/                   # Generated meal plans
-└── package.json                 # Dependencies
-```
+- `npm start` - Run production webhook server
+- `npm run dev` - Run production server with nodemon
+- `npm run dev-ui` - Run development UI server
+- `npm test` - Run test suite
 
-## 🚀 Deployment
+## 📋 Key Components
 
-### Railway (Recommended)
-```bash
-railway login
-railway init
-railway up
-```
+### Core Modules (`src/modules/`)
+The modules follow a logical processing sequence from 1-6:
+- **Module-1-Calculations.js** - Calculates nutrition targets based on user data
+- **Module-2-Psychology.js** - Analyzes psychological factors and coaching needs
+- **Module-3-Communication.js** - Generates personalized communication templates
+- **Module-4-Supplements.js** - Analyzes supplement needs and generates recommendations
+- **Module-5-Meal-Plan.js** - Generates precision meal plans with ±25 calorie accuracy
+- **Module-6-Interactive-HTML.js** - Creates interactive meal plan HTML interfaces
 
-### Render
-1. Push to GitHub
-2. Connect repository in Render
-3. Set environment variables
-4. Deploy
+### Services (`src/services/`)
+- **main-orchestrator.js** - Coordinates all modules and data flow
+- **meal-template-service.js** - Intelligent meal template selection and scaling
 
-### Traditional VPS
-See `WEBHOOK-SETUP-GUIDE.md` for detailed instructions
+### Templates (`src/templates/`)
+- **meal-templates-*.js** - Curated meal templates organized by timing and type
+- Templates support scaling, dietary restrictions, and user preferences
+
+### Utils (`src/utils/`)
+- **food-database-loader.js** - Loads and indexes nutrition database
+- **supplement-parser.js** - Parses supplement strings and formats for display
+
+## 🗃️ Data Flow
+
+1. **User Input** → Typeform webhook or test data
+2. **Module-1** → Calculates nutrition targets
+3. **Module-2** → Analyzes psychology and coaching needs
+4. **Module-3** → Generates communication templates
+5. **Module-4** → Analyzes and recommends supplements
+6. **Module-5** → Generates precision meal plans using templates
+7. **Module-6** → Creates interactive HTML meal plan with all components
 
 ## 🧪 Testing
 
-Test the webhook endpoint:
-```bash
-curl -X POST http://localhost:3000/webhook/typeform \
-  -H "Content-Type: application/json" \
-  -d @test-webhook-payload.json
-```
+The system includes comprehensive tests for:
+- Complete end-to-end flow
+- Supplement integration and parsing
+- Template selection and scaling
+- UI generation and display
 
-## 📊 API Endpoints
+## 📖 Documentation
 
-- `GET /` - Health check
-- `POST /webhook/typeform` - Typeform webhook receiver
-- `GET /plans/:id` - View generated meal plan
+See the `docs/` directory for:
+- Original specifications
+- Architecture documentation
+- Development roadmaps
+- Implementation guides
 
-## 🔧 Configuration
+## 🔄 Development Workflow
 
-The system automatically determines the nutrition methodology based on user responses:
-- **Moderate**: Standard hierarchical macro targeting
-- **Shelby-Justin**: Extreme carb cycling for experienced users
+1. Make changes to source files in `src/`
+2. Test with development server: `npm run dev-ui`
+3. Run tests: `npm test`
+4. Deploy production server: `npm start`
 
-## 📝 License
-
-Private repository - All rights reserved
-
-## 🤝 Contributing
-
-This is a private project. Please contact the repository owner for access.
-
-## 📞 Support
-
-For issues or questions, please contact the development team.
-
----
-
-Built with ❤️ for Stephanie Sanzo's premium nutrition clients 
+The development server automatically refreshes when you make changes to source files. 

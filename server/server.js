@@ -159,25 +159,25 @@ function mapTypeformToUserData(formResponse) {
     // Goals and activity
     goal: answers['06c1f01a-c171-4868-a0c1-2a93484e13ff'] || 'maintenance',
     activityLevel: answers['a77e68a0-4210-4422-8ad3-a92e04600412'] || 'moderate',
-    trainingDays: parseInt(answers['aa456f57-4bbb-4287-8b7e-a5e3f2ae9e3e']) || 3,
+    trainingDays: parseInt(answers['3310d809-77c1-4032-b08c-60aa34be84e8']) || 3,
     resultsTimeline: answers['03c4ef98-07d5-4f36-af3b-c181ed9ed6a6'] || 'moderate',
     
     // Methodology selection (new questions)
-    currentCarbIntake: answers['b26c4c78-0f97-43a5-9b13-0bc4a7e8dcf3'] || '',
-    experience300gCarbs: answers['14db821f-ecf7-4cb2-a26e-b84b6e4e01c2'] || '',
+    currentCarbIntake: answers['138b3bd8-91ca-45ff-8218-979d8d74667e'] || '',
+    experience300gCarbs: answers['6b7f5ac4-6e65-4ce1-a2c5-a286f4027408'] || '',
     carbResponse: answers['d3af2ee4-7cc8-4301-9ff4-d410cf4a7041'] || '',
-    mealPlanExperience: answers['baf4f038-3b5f-4e4e-ba9d-e287df2f16a8'] || '',
+    mealPlanExperience: answers['aacaa5c1-cff2-40f9-a5cc-361f446d99de'] || '',
     
     // Food preferences
-    favProteins: answers['bc9cea54-f02f-46ba-9187-db5dc3e7d87e'] || [],
+    favProteins: answers['de3adf27-eebf-4f46-9fc0-82b13d0795c6'] || [],
     favCarbs: answers['bc292638-405e-476c-8ee4-8f01db022c48'] || [],
     favFats: answers['c7d69a6c-4bce-49fd-8b0a-1622e5772247'] || [],
     
     // Dietary restrictions
-    dietaryPreference: answers['d3a8f5a7-2b8f-47f9-8c67-cbed0ee7b835'] || 'standard',
-    dietaryIssues: answers['e2cf5a8e-9c7f-4f8a-b3d7-1a9e5b6c8d2f'] || [],
-    allergies: answers['f383b653-95b8-4754-b3fc-81b4ba8ecc0e'] || [],
-    intolerances: answers['fbe1de80-76d9-47f5-afa5-e38e36fe3c4e'] || [],
+    dietaryPreference: answers['64b62bf1-52c5-418e-ba6c-335cd3e41550'] || 'standard',
+    dietaryIssues: answers['92421d12-1c19-4b5c-a809-8d49e8b524ec'] || [],
+    allergies: answers['92421d12-1c19-4b5c-a809-8d49e8b524ec'] || [],
+    intolerances: answers['92421d12-1c19-4b5c-a809-8d49e8b524ec'] || [],
     
     // Set methodology based on carb intake
     methodology: determineMethodology(answers)
@@ -186,8 +186,8 @@ function mapTypeformToUserData(formResponse) {
 
 // Determine which methodology to use based on answers
 function determineMethodology(answers) {
-  const carbIntake = answers['b26c4c78-0f97-43a5-9b13-0bc4a7e8dcf3'];
-  const experience = answers['14db821f-ecf7-4cb2-a26e-b84b6e4e01c2'];
+  const carbIntake = answers['138b3bd8-91ca-45ff-8218-979d8d74667e'];
+  const experience = answers['6b7f5ac4-6e65-4ce1-a2c5-a286f4027408'];
   
   // Use Shelby-Justin if user has experience with higher carbs
   if (carbIntake === '300g +' || experience === 'regularly') {

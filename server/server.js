@@ -45,8 +45,10 @@ app.post('/webhook/typeform', async (req, res) => {
     }
 
     // Map Typeform responses to your userData structure
+    console.log('📥 Raw webhook data:', JSON.stringify(formResponse, null, 2));
     const userData = mapTypeformToUserData(formResponse);
     console.log('👤 Processing for:', userData.first_name, userData.last_name);
+    console.log('📊 Mapped userData:', JSON.stringify(userData, null, 2));
 
     // Step 1: Calculate nutrition targets
     console.log('📊 Calculating nutrition targets...');

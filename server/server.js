@@ -26,6 +26,11 @@ const reviewQueue = new ReviewQueue();
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static('public')); // Serve generated meal plans
+app.use('/static', express.static(path.join(__dirname, 'static'))); // Serve static assets
+
+// Import plan editor routes
+const planEditorRoutes = require('./api/plan-editor');
+app.use('/api', planEditorRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -129,6 +134,11 @@ app.get('/plans/:fileName', async (req, res) => {
 // Admin dashboard
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+});
+
+// Plan editor page
+app.get('/admin/edit-plan', (req, res) => {
+  res.sendFile(path.join(__dirname, 'plan-editor.html'));
 });
 
 // Admin API routes

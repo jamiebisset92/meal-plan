@@ -125,6 +125,11 @@
             color: white;
         }
 
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
         .plan-details {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -238,6 +243,7 @@
                             </div>
                             <div class="plan-actions">
                                 <a href="${plan.planUrl}" target="_blank" class="btn btn-view">👁️ View Plan</a>
+                                <button onclick="dashboard.editPlan('${plan.id}')" class="btn btn-edit">✏️ Edit</button>
                                 <button onclick="dashboard.approvePlan('${plan.id}')" class="btn btn-approve">✅ Approve</button>
                                 <button onclick="dashboard.rejectPlan('${plan.id}')" class="btn btn-reject">❌ Reject</button>
                             </div>
@@ -283,6 +289,10 @@
                     console.error('Error approving plan:', error);
                     alert('Error approving plan');
                 }
+            }
+
+            editPlan(planId) {
+                window.location.href = `/admin/edit-plan?planId=${planId}`;
             }
 
             async rejectPlan(planId) {

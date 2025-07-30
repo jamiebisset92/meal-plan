@@ -1,49 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>John Doe's Interactive Meal Plan - Stephanie Sanzo Nutrition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Test Meal Plan - John Doe</title>
-                </head>
-                <body>
-                    <h1>John Doe's Meal Plan</h1>
-                    <div class="meal-card">
-                        <h3>Breakfast</h3>
-                        <div class="food-item">
-                            <span class="food-name">Eggs (large)</span>
-                            <span class="food-amount">200g</span>
-                            <span class="calories">280</span>
-                            <span class="protein">24g</span>
-                            <span class="carbs">2g</span>
-                            <span class="fats">20g</span>
-                        </div>
-                        <div class="food-item">
-                            <span class="food-name">Oats</span>
-                            <span class="food-amount">60g</span>
-                            <span class="calories">220</span>
-                            <span class="protein">8g</span>
-                            <span class="carbs">40g</span>
-                            <span class="fats">4g</span>
-                        </div>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #1a1a1a;
+            font-weight: 400;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .day-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .day-tab {
+            padding: 12px 24px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .day-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .day-tab:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .day-tab.active:hover {
+            color: white;
+        }
+
+        .meals-container {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .meal-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s ease;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .meal-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+
+        .meal-macros {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .macro-item {
+            text-align: center;
+        }
+
+        .macro-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .macro-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+
+        .foods-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .food-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 80px 60px 60px 60px;
+            gap: 15px;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .food-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .food-amount {
+            text-align: center;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .food-macro {
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .supplements-section {
+            background: #e8f4f8;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .supplements-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .supplements-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .supplement-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 80px;
+            gap: 15px;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .day-totals {
+            background: #2c5aa0;
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .day-totals h3 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .totals-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .total-item {
+            text-align: center;
+        }
+
+        .total-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .total-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .progress-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .progress-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin-bottom: 20px;
+        }
+
+        .progress-item {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .progress-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .progress-values {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.calories { background: #667eea; }
+        .progress-fill.protein { background: #28a745; }
+        .progress-fill.carbs { background: #ffc107; }
+        .progress-fill.fats { background: #dc3545; }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-top: 40px;
+        }
+
+        .footer h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+
+        .footer p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .day-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .meal-macros {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .food-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .totals-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .supplement-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>John Doe's Interactive Meal Plan</h1>
+            <p>Personalized nutrition plan by Stephanie Sanzo Nutrition</p>
+        </div>
+
+        <!-- Day Selector -->
+        <div class="day-selector">
+            <button class="day-tab active" onclick="switchDay('training')">Training Day</button>
+            <button class="day-tab" onclick="switchDay('rest')">Rest Day</button>
+            <button class="day-tab" onclick="switchDay('refeed')">Refeed Day</button>
+        </div>
+
+        <!-- Meals Container -->
+        <div class="meals-container" id="mealsContainer">
+            <!-- Training Day Meals -->
+            <div class="meal-card">
+                <div class="meal-header">
+                    <h3 class="meal-title">Breakfast</h3>
+                </div>
+                
+                <div class="meal-macros">
+                    <div class="macro-item">
+                        <div class="macro-label">Calories</div>
+                        <div class="macro-value">500</div>
                     </div>
-                    <div class="meal-card">
-                        <h3>Lunch</h3>
-                        <div class="food-item">
-                            <span class="food-name">Chicken Breast</span>
-                            <span class="food-amount">150g</span>
-                            <span class="calories">250</span>
-                            <span class="protein">45g</span>
-                            <span class="carbs">0g</span>
-                            <span class="fats">5g</span>
-                        </div>
-                        <div class="food-item">
-                            <span class="food-name">Brown Rice</span>
-                            <span class="food-amount">80g</span>
-                            <span class="calories">280</span>
-                            <span class="protein">6g</span>
-                            <span class="carbs">55g</span>
-                            <span class="fats">2g</span>
-                        </div>
+                    <div class="macro-item">
+                        <div class="macro-label">Protein</div>
+                        <div class="macro-value">32g</div>
                     </div>
-                </body>
-                </html>
+                    <div class="macro-item">
+                        <div class="macro-label">Carbs</div>
+                        <div class="macro-value">42g</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-label">Fat</div>
+                        <div class="macro-value">24g</div>
+                    </div>
+                </div>
+
+                <div class="foods-list">
+                    <div class="food-item">
+                        <div class="food-name">Eggs (large)</div>
+                        <div class="food-amount">200g</div>
+                        <div class="food-macro">280cal</div>
+                        <div class="food-macro">24g P</div>
+                        <div class="food-macro">2g C</div>
+                        <div class="food-macro">20g F</div>
+                    </div>
+                    <div class="food-item">
+                        <div class="food-name">Oats</div>
+                        <div class="food-amount">60g</div>
+                        <div class="food-macro">220cal</div>
+                        <div class="food-macro">8g P</div>
+                        <div class="food-macro">40g C</div>
+                        <div class="food-macro">4g F</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="meal-card">
+                <div class="meal-header">
+                    <h3 class="meal-title">Lunch</h3>
+                </div>
+                
+                <div class="meal-macros">
+                    <div class="macro-item">
+                        <div class="macro-label">Calories</div>
+                        <div class="macro-value">530</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-label">Protein</div>
+                        <div class="macro-value">51g</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-label">Carbs</div>
+                        <div class="macro-value">55g</div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-label">Fat</div>
+                        <div class="macro-value">7g</div>
+                    </div>
+                </div>
+
+                <div class="foods-list">
+                    <div class="food-item">
+                        <div class="food-name">Chicken Breast</div>
+                        <div class="food-amount">150g</div>
+                        <div class="food-macro">250cal</div>
+                        <div class="food-macro">45g P</div>
+                        <div class="food-macro">0g C</div>
+                        <div class="food-macro">5g F</div>
+                    </div>
+                    <div class="food-item">
+                        <div class="food-name">Brown Rice</div>
+                        <div class="food-amount">80g</div>
+                        <div class="food-macro">280cal</div>
+                        <div class="food-macro">6g P</div>
+                        <div class="food-macro">55g C</div>
+                        <div class="food-macro">2g F</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplements Section -->
+        <div class="supplements-section">
+            <h3 class="supplements-title">💊 Daily Supplements</h3>
+            <div class="supplements-grid">
+                <div class="supplement-item">
+                    <div class="supplement-name">Vitamin D</div>
+                    <div class="supplement-amount">2,000 IU</div>
+                    <div class="supplement-timing">Morning</div>
+                    <div class="supplement-priority">Essential</div>
+                </div>
+                <div class="supplement-item">
+                    <div class="supplement-name">Omega-3</div>
+                    <div class="supplement-amount">1,000mg</div>
+                    <div class="supplement-timing">Evening</div>
+                    <div class="supplement-priority">Essential</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day Totals -->
+        <div class="day-totals">
+            <h3>📊 Daily Totals</h3>
+            <div class="totals-grid">
+                <div class="total-item">
+                    <div class="total-label">Calories</div>
+                    <div class="total-value">1,030</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Protein</div>
+                    <div class="total-value">83g</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Carbs</div>
+                    <div class="total-value">97g</div>
+                </div>
+                <div class="total-item">
+                    <div class="total-label">Fat</div>
+                    <div class="total-value">31g</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <h3 class="progress-title">🎯 Progress Tracking</h3>
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">Calories</span>
+                    <span class="progress-values">1,030 / 2,500</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill calories" style="width: 41.2%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">Protein</span>
+                    <span class="progress-values">83g / 150g</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill protein" style="width: 55.3%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">Carbs</span>
+                    <span class="progress-values">97g / 250g</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill carbs" style="width: 38.8%"></div>
+                </div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-header">
+                    <span class="progress-label">Fat</span>
+                    <span class="progress-values">31g / 100g</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill fats" style="width: 31%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>💡 Tips for Success</h3>
+            <p>Track your progress daily and adjust portions as needed. Remember to stay hydrated and get adequate sleep for optimal results. This plan is personalized for your goals and preferences.</p>
+        </div>
+    </div>
+
+    <script>
+        function switchDay(day) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.day-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Here you would load the meals for the selected day
+            console.log('Switched to:', day);
+        }
+    </script>
+</body>
+</html>
             

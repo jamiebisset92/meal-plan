@@ -242,7 +242,7 @@
                                 <div class="client-email">${plan.clientData.email}</div>
                             </div>
                             <div class="plan-actions">
-                                <a href="${plan.planUrl}" target="_blank" class="btn btn-view">👁️ View Plan</a>
+                                <button onclick="dashboard.viewPlan('${plan.id}')" class="btn btn-view">👁️ View Plan</button>
                                 <button onclick="dashboard.editPlan('${plan.id}')" class="btn btn-edit">✏️ Edit</button>
                                 <button onclick="dashboard.approvePlan('${plan.id}')" class="btn btn-approve">✅ Approve</button>
                                 <button onclick="dashboard.rejectPlan('${plan.id}')" class="btn btn-reject">❌ Reject</button>
@@ -293,6 +293,12 @@
 
             editPlan(planId) {
                 window.location.href = `/admin/edit-plan?planId=${planId}`;
+            }
+
+            viewPlan(planId) {
+                // Open the plan in a new window with proper formatting
+                const planUrl = `/plans/${planId}.html`;
+                window.open(planUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
             }
 
             async rejectPlan(planId) {

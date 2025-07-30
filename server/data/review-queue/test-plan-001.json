@@ -1,0 +1,15 @@
+{
+  "id": "test-plan-001",
+  "timestamp": "2025-07-30T02:11:43.779Z",
+  "clientData": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com",
+    "goal": "muscle_gain",
+    "activityLevel": "moderate",
+    "age": 28
+  },
+  "planUrl": "http://localhost:3000/plans/test-plan-001.html",
+  "status": "pending",
+  "planHTML": "\n                <!DOCTYPE html>\n                <html>\n                <head>\n                    <title>Test Meal Plan - John Doe</title>\n                </head>\n                <body>\n                    <h1>John Doe's Meal Plan</h1>\n                    <div class=\"meal-card\">\n                        <h3>Breakfast</h3>\n                        <div class=\"food-item\">\n                            <span class=\"food-name\">Eggs (large)</span>\n                            <span class=\"food-amount\">200g</span>\n                            <span class=\"calories\">280</span>\n                            <span class=\"protein\">24g</span>\n                            <span class=\"carbs\">2g</span>\n                            <span class=\"fats\">20g</span>\n                        </div>\n                        <div class=\"food-item\">\n                            <span class=\"food-name\">Oats</span>\n                            <span class=\"food-amount\">60g</span>\n                            <span class=\"calories\">220</span>\n                            <span class=\"protein\">8g</span>\n                            <span class=\"carbs\">40g</span>\n                            <span class=\"fats\">4g</span>\n                        </div>\n                    </div>\n                    <div class=\"meal-card\">\n                        <h3>Lunch</h3>\n                        <div class=\"food-item\">\n                            <span class=\"food-name\">Chicken Breast</span>\n                            <span class=\"food-amount\">150g</span>\n                            <span class=\"calories\">250</span>\n                            <span class=\"protein\">45g</span>\n                            <span class=\"carbs\">0g</span>\n                            <span class=\"fats\">5g</span>\n                        </div>\n                        <div class=\"food-item\">\n                            <span class=\"food-name\">Brown Rice</span>\n                            <span class=\"food-amount\">80g</span>\n                            <span class=\"calories\">280</span>\n                            <span class=\"protein\">6g</span>\n                            <span class=\"carbs\">55g</span>\n                            <span class=\"fats\">2g</span>\n                        </div>\n                    </div>\n                </body>\n                </html>\n            "
+}

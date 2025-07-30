@@ -2777,7 +2777,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
     <div class="container">
         <div class="header">
             <div class="header-content">
-                <img src="logo.jpg" alt="Stephanie Sanzo" class="logo">
+                <img src="../logo.jpg" alt="Stephanie Sanzo" class="logo">
             </div>
             <div class="progress-section">
                 <div class="progress-bar">
@@ -2862,7 +2862,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
 
         <div class="sticky-footer-container">
             <div class="desktop-logo-section">
-                <img src="logo.jpg" alt="Stephanie Sanzo" class="logo">
+                <img src="../logo.jpg" alt="Stephanie Sanzo" class="logo">
             </div>
             <div class="day-navigation-footer" id="dayNavigationFooter">
                 <button class="nav-arrow" onclick="navigateDay(-1)">‹</button>

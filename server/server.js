@@ -13,9 +13,15 @@ const crypto = require('crypto');
 // Import your modules
 const { calculateNutritionTargets } = require('../src/modules/Module-1-Calculations');
 const { buildPersonalizedNutritionPlan } = require('../src/modules/Module-5-Meal-Plan');
+const EmailService = require('./email-service');
+const ReviewQueue = require('./review-queue');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize services
+const emailService = new EmailService();
+const reviewQueue = new ReviewQueue();
 
 // Middleware
 app.use(bodyParser.json());
@@ -73,21 +79,27 @@ app.post('/webhook/typeform', async (req, res) => {
     // Save the HTML file
     await fs.writeFile(filePath, mealPlanHTML);
     
-    // Generate the access URL
-    const planUrl = `${process.env.BASE_URL || `http://localhost:${PORT}`}/plans/${fileName}`;
+    // Generate the access URL with custom domain
+    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const planUrl = `${baseUrl}/plans/${fileName}`;
     
     console.log('✅ Meal plan generated:', planUrl);
+    
+    // Add to review queue instead of sending immediately
+    await reviewQueue.addToQueue({
+      planId,
+      userData,
+      planUrl,
+      planHTML: mealPlanHTML
+    });
     
     // Send response back to Typeform
     res.json({
       success: true,
       planId: planId,
       planUrl: planUrl,
-      message: 'Meal plan generated successfully'
+      message: 'Meal plan created and added to review queue'
     });
-    
-    // Optional: Send email to client with their plan URL
-    // await sendPlanEmail(userData.email, planUrl);
     
   } catch (error) {
     console.error('❌ Error processing webhook:', error);
@@ -111,6 +123,67 @@ app.get('/plans/:fileName', async (req, res) => {
     res.sendFile(filePath);
   } catch (error) {
     res.status(404).send('Meal plan not found');
+  }
+});
+
+// Admin dashboard
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+});
+
+// Admin API routes
+app.get('/api/admin/queue', async (req, res) => {
+  try {
+    const queue = await reviewQueue.getQueue();
+    res.json(queue);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/approve/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const approvedPlan = await reviewQueue.approvePlan(planId);
+    
+    // Send email to client
+    await emailService.sendMealPlanEmail(approvedPlan.clientData, approvedPlan.planUrl);
+    
+    res.json({ success: true, message: 'Plan approved and email sent' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/reject/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { reason } = req.body;
+    
+    await reviewQueue.rejectPlan(planId, reason);
+    
+    res.json({ success: true, message: 'Plan rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const queue = await reviewQueue.getQueue();
+    const pending = queue.length;
+    
+    // Get approved today
+    const today = new Date().toDateString();
+    const approvedToday = 0; // TODO: Implement approved today count
+    
+    res.json({
+      pending,
+      approvedToday,
+      total: pending + approvedToday
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

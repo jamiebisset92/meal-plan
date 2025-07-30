@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Plan Review Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #2c5aa0;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .queue-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .plan-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .client-info {
+            flex: 1;
+        }
+
+        .client-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2c5aa0;
+        }
+
+        .client-email {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .plan-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-approve {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-view {
+            background: #007bff;
+            color: white;
+        }
+
+        .plan-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid #2c5aa0;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .detail-value {
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .empty-queue {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Meal Plan Review Dashboard</h1>
+            <p>Review and approve pending meal plans</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="pending-count">-</div>
+                <div>Pending Review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="approved-count">-</div>
+                <div>Approved Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-count">-</div>
+                <div>Total Plans</div>
+            </div>
+        </div>
+
+        <div class="queue-section">
+            <h2>📋 Pending Meal Plans</h2>
+            <div id="queue-container">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin Dashboard JavaScript
+        class AdminDashboard {
+            constructor() {
+                this.queueContainer = document.getElementById('queue-container');
+                this.loadQueue();
+                this.loadStats();
+            }
+
+            async loadQueue() {
+                try {
+                    const response = await fetch('/api/admin/queue');
+                    const queue = await response.json();
+                    
+                    if (queue.length === 0) {
+                        this.queueContainer.innerHTML = `
+                            <div class="empty-queue">
+                                <h3>🎉 No pending plans!</h3>
+                                <p>All meal plans have been reviewed.</p>
+                            </div>
+                        `;
+                    } else {
+                        this.renderQueue(queue);
+                    }
+                } catch (error) {
+                    console.error('Error loading queue:', error);
+                    this.queueContainer.innerHTML = `
+                        <div class="empty-queue">
+                            <h3>❌ Error loading queue</h3>
+                            <p>Please try refreshing the page.</p>
+                        </div>
+                    `;
+                }
+            }
+
+            renderQueue(queue) {
+                this.queueContainer.innerHTML = queue.map(plan => `
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <div class="client-info">
+                                <div class="client-name">${plan.clientData.first_name} ${plan.clientData.last_name}</div>
+                                <div class="client-email">${plan.clientData.email}</div>
+                            </div>
+                            <div class="plan-actions">
+                                <a href="${plan.planUrl}" target="_blank" class="btn btn-view">👁️ View Plan</a>
+                                <button onclick="dashboard.approvePlan('${plan.id}')" class="btn btn-approve">✅ Approve</button>
+                                <button onclick="dashboard.rejectPlan('${plan.id}')" class="btn btn-reject">❌ Reject</button>
+                            </div>
+                        </div>
+                        <div class="plan-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Goal</div>
+                                <div class="detail-value">${plan.clientData.goal || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Activity Level</div>
+                                <div class="detail-value">${plan.clientData.activityLevel || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Age</div>
+                                <div class="detail-value">${plan.clientData.age || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Submitted</div>
+                                <div class="detail-value">${new Date(plan.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async approvePlan(planId) {
+                if (!confirm('Are you sure you want to approve this meal plan?')) return;
+                
+                try {
+                    const response = await fetch(`/api/admin/approve/${planId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        alert('Plan approved! Email sent to client.');
+                        this.loadQueue();
+                        this.loadStats();
+                    } else {
+                        alert('Error approving plan');
+                    }
+                } catch (error) {
+                    console.error('Error approving plan:', error);
+                    alert('Error approving plan');
+                }
+            }
+
+            async rejectPlan(planId) {
+                const reason = prompt('Please provide a reason for rejection:');
+                if (!reason) return;
+                
+                try {
+                    const response = await fetch(`/api/admin/reject/${planId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+                    
+                    if (response.ok) {
+                        alert('Plan rejected');
+                        this.loadQueue();
+                        this.loadStats();
+                    } else {
+                        alert('Error rejecting plan');
+                    }
+                } catch (error) {
+                    console.error('Error rejecting plan:', error);
+                    alert('Error rejecting plan');
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/admin/stats');
+                    const stats = await response.json();
+                    
+                    document.getElementById('pending-count').textContent = stats.pending;
+                    document.getElementById('approved-count').textContent = stats.approvedToday;
+                    document.getElementById('total-count').textContent = stats.total;
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+        }
+
+        // Initialize dashboard
+        const dashboard = new AdminDashboard();
+    </script>
+</body>
+</html> 

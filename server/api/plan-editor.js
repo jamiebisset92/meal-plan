@@ -193,20 +193,48 @@ async function extractMealDataFromHTML(htmlContent) {
 
 // Helper function to generate updated meal plan HTML
 async function generateUpdatedMealPlanHTML(planItem, updatedMeals) {
-    // This would use your existing meal plan generation logic
-    // For now, return a placeholder
-    return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Updated Meal Plan - ${planItem.clientData.first_name} ${planItem.clientData.last_name}</title>
-    </head>
-    <body>
-        <h1>Updated Meal Plan</h1>
-        <pre>${JSON.stringify(updatedMeals, null, 2)}</pre>
-    </body>
-    </html>
-    `;
+    const { generateInteractiveHTML } = require('../../src/modules/Module-6-Interactive-HTML');
+    const { generateSupplementSection } = require('../../src/modules/Module-5-Meal-Plan');
+    
+    // Extract necessary data
+    const userData = planItem.clientData;
+    const targets = planItem.targets || {};
+    
+    // Get supplements data if available
+    let supplementsData = null;
+    if (planItem.supplementsData) {
+        supplementsData = planItem.supplementsData;
+    } else {
+        // Generate basic supplements based on tier
+        const tier = userData.additionalSupplements || 'essentials_only';
+        const supplementsModule57Data = {
+            personalized_protocol: {
+                age_optimized_daily_foundation: "Vitamin D3 3000IU + B-Complex + Magnesium 300mg PM",
+                energy_vitality_stack: "Green Tea Extract 400mg AM + L-Carnitine 1000mg AM",
+                recovery_sleep_stack: "Magnesium Glycinate 400mg PM + Melatonin 3mg before bed"
+            },
+            supplement_analysis: {
+                tier_assignment: tier
+            }
+        };
+        supplementsData = generateSupplementSection(supplementsModule57Data, userData);
+    }
+    
+    // Process meals for the current day type
+    const meals = updatedMeals.training || updatedMeals;
+    
+    // Generate the interactive HTML
+    return generateInteractiveHTML(
+        meals,
+        targets,
+        userData,
+        null, // postWorkout
+        null, // coffee
+        null, // energyDrinks
+        null, // snacks
+        null, // alcohol
+        supplementsData
+    );
 }
 
 // Helper function to generate AI suggestions

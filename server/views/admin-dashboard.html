@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Stephanie Sanzo Nutrition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            color: #1a1a1a;
+            font-weight: 400;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #ffffff;
+            padding: 16px 32px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+            margin: 0;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin: 0;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .header .logo {
+            height: 48px;
+            width: auto;
+            opacity: 1;
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 32px;
+            background-color: #ddd;
+        }
+
+        .sub-header {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .sub-header p {
+            font-size: 16px;
+            font-style: italic;
+            font-weight: 400;
+            color: #666;
+            margin: 0;
+        }
+
+        .content-wrapper {
+            padding: 16px 32px 32px 32px;
+            background: #ffffff;
+            min-height: calc(100vh - 120px);
+            margin-top: 16px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+
+
+        /* Mobile Financial Analytics */
+        @media (max-width: 768px) {
+            .financial-container {
+                padding: 12px 16px;
+                margin-bottom: 24px;
+            }
+
+            .financial-header {
+                margin-bottom: 12px;
+                padding-bottom: 6px;
+            }
+
+            .financial-header h2 {
+                font-size: 16px;
+            }
+
+            .financial-stats {
+                gap: 4px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .financial-stats .stat-card {
+                padding: 8px 4px;
+                border-radius: 10px;
+            }
+
+            .financial-stats .stat-number {
+                font-size: 20px;
+                margin-bottom: 2.5px;
+            }
+
+            .financial-stats .stat-label {
+                font-size: 9px;
+                line-height: 1.1;
+                word-wrap: break-word;
+            }
+        }
+
+        /* Mobile Meal Plan Analytics */
+        @media (max-width: 768px) {
+            .meal-container {
+                padding: 12px 16px;
+                margin-bottom: 24px;
+            }
+
+            .meal-header {
+                margin-bottom: 12px;
+                padding-bottom: 6px;
+            }
+
+            .meal-header h2 {
+                font-size: 16px;
+            }
+
+            .meal-stats {
+                gap: 4px;
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .meal-stats .stat-card {
+                padding: 8px 4px;
+                border-radius: 10px;
+            }
+
+            .meal-stats .stat-number {
+                font-size: 20px;
+                margin-bottom: 2.5px;
+            }
+
+            .meal-stats .stat-label {
+                font-size: 9px;
+                line-height: 1.1;
+                word-wrap: break-word;
+            }
+        }
+
+        /* Ensure single row on smaller desktop screens */
+        @media (min-width: 769px) and (max-width: 1200px) {
+            .financial-container {
+                padding: 20px;
+            }
+
+            .financial-header h2 {
+                font-size: 17px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+            
+            .stat-card {
+                padding: 16px;
+            }
+            
+            .stat-number {
+                font-size: 32px;
+            }
+            
+            .stat-label {
+                font-size: 11px;
+            }
+        }
+
+        .stat-card {
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e5e5;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.12),
+                        0 16px 48px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-number {
+            font-size: 40px;
+            font-weight: 700;
+            color: #4b5563;
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .queue-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 32px 32px 32px; /* Reduced top padding from 32px to 16px */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+        }
+
+        .queue-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px; /* Reduced from 24px */
+            padding-bottom: 8px; /* Reduced from 16px */
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .queue-header h2 {
+            display: none; /* Hide "Meal Plans" header on desktop */
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0 0 16px 0;
+        }
+
+        /* Twitter-like Tabs */
+        .tabs-container {
+            width: 100%;
+            margin-top: -8px; /* Pull tabs closer to remove gap */
+        }
+
+        .tabs {
+            display: flex;
+            background: transparent;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #657786;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            flex: 1;
+        }
+
+        .tab-button:hover {
+            color: #1a1a1a;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .tab-button.active {
+            color: #1a1a1a;
+            border-bottom-color: #1da1f2;
+            font-weight: 600;
+        }
+
+        .tab-text {
+            font-size: 18px; /* Match meal-header h2 size */
+            font-weight: 600; /* Match meal-header h2 weight */
+        }
+
+        .tab-count {
+            background: #e5e5e5;
+            color: #657786;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button.active .tab-count {
+            background: #1da1f2;
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            margin-top: 24px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Search Bar Styling */
+        .search-container {
+            padding: 0px 0 16px 0; /* Reduced top padding from 16px to 8px */
+            border-bottom: 1px solid #f0f0f0;
+            margin: 0; /* Ensure no extra margins */
+        }
+
+        .search-bar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            padding: 8px 12px;
+            transition: all 0.2s ease;
+        }
+
+        .search-bar:focus-within {
+            border-color: #1da1f2;
+            box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.1);
+        }
+
+        .search-icon {
+            color: #657786;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        #search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #1a1a1a;
+            outline: none;
+        }
+
+        #search-input::placeholder {
+            color: #657786;
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            color: #657786;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .clear-search:hover {
+            background: #e5e5e5;
+            color: #1a1a1a;
+        }
+
+        .plan-card {
+            background: #fafafa;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+
+        .plan-card:hover {
+            background: #fafbfc;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            gap: 24px;
+        }
+
+        .client-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .client-name {
+            font-weight: 600;
+            font-size: 20px;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .client-email {
+            color: #666;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .client-submitted {
+            color: #666;
+            font-size: 13px;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        .plan-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px; /* More compact padding */
+            border: none;
+            border-radius: 6px; /* Slightly smaller radius for modern look */
+            cursor: pointer;
+            font-weight: 500; /* Lighter weight for premium feel */
+            font-size: 13px; /* Slightly smaller text */
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            letter-spacing: 0.01em; /* Subtle letter spacing */
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04); /* Softer shadow */
+            border: 1px solid transparent; /* For premium border effects */
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-approve {
+            background: #10b981; /* Flat green */
+            color: white;
+            border-color: #10b981;
+            font-weight: 700; /* Make approve button text bold */
+        }
+
+        .btn-approve:hover {
+            background: #059669; /* Darker green on hover */
+            border-color: #059669;
+        }
+
+        .btn-view {
+            background: #6b7280; /* Flat grey */
+            color: white;
+            border-color: #6b7280;
+        }
+
+        .btn-view:hover {
+            background: #4b5563; /* Darker grey on hover */
+            border-color: #4b5563;
+        }
+
+        .btn-edit {
+            background: #3b82f6; /* Flat blue */
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .btn-edit:hover {
+            background: #2563eb; /* Darker blue on hover */
+            border-color: #2563eb;
+        }
+
+        .plan-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .detail-row:not(:last-child) {
+            margin-bottom: 12px;
+        }
+
+        .detail-item {
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            border-left: none;
+            box-shadow: none;
+            text-align: center;
+        }
+
+        .detail-item:not(:last-child) {
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            color: #1a1a1a;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .empty-queue {
+            text-align: center;
+            padding: 80px 40px;
+            color: #666;
+        }
+
+        .empty-queue h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 12px;
+        }
+
+        .empty-queue p {
+            font-size: 16px;
+            color: #888;
+            font-weight: 400;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px 40px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f0f0f0;
+            border-radius: 50%;
+            border-top-color: #4b5563;
+            animation: spin 0.8s ease-in-out infinite;
+            margin-top: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile-First Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                background: #ffffff;
+            }
+
+            .container {
+                background: #ffffff;
+            }
+
+            .header {
+                padding: 16px 0;
+                margin-bottom: 0;
+                border-radius: 0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.08), 0 8px 32px rgba(0, 0, 0, 0.04);
+            }
+
+            .header-content {
+                flex-direction: row;
+                gap: 12px;
+                padding: 0 16px;
+                align-items: center;
+            }
+
+            .header h1 {
+                font-size: 18px;
+                font-weight: 600;
+            }
+
+            .header .logo {
+                height: 32px;
+            }
+
+            .header-divider {
+                display: block;
+            }
+
+            .sub-header {
+                margin-top: 4px;
+            }
+
+            .sub-header p {
+                font-size: 13px;
+            }
+
+            .content-wrapper {
+                padding: 16px;
+                background: #ffffff;
+                margin-top: 8px;
+            }
+
+            /* Mobile Stats Cards */
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+                margin-bottom: 24px;
+            }
+
+            .stat-card {
+                padding: 8px 4px;
+                border-radius: 10px;
+                background: #ffffff;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                            0 4px 12px rgba(0, 0, 0, 0.08),
+                            0 8px 24px rgba(0, 0, 0, 0.06);
+                border: 1px solid #e5e5e5;
+            }
+
+            .stat-card:active {
+                transform: scale(0.98);
+                transition: transform 0.1s ease;
+            }
+
+            .stat-number {
+                font-size: 20px;
+                margin-bottom: 2.5px;
+                font-weight: 700;
+                line-height: 1;
+            }
+
+            .stat-label {
+                font-size: 9px;
+                font-weight: 500;
+                line-height: 1.1;
+                word-wrap: break-word;
+            }
+
+                                /* Mobile-specific total card label */
+            .stat-card.total .stat-label {
+                font-size: 9px;
+                line-height: 1.1;
+            }
+
+            /* Show/hide text based on screen size for mobile */
+            .desktop-only {
+                display: none;
+            }
+            
+            .mobile-only {
+                display: inline;
+            }
+
+            /* Mobile Queue Section */
+            .queue-section {
+                background: transparent !important; /* Remove card background */
+                padding: 0 !important; /* Remove card padding */
+                margin: 0 !important; /* Remove card margins */
+                box-shadow: none !important; /* Remove card shadow */
+                border: none !important; /* Remove card border */
+                border-radius: 0 !important; /* Remove card border radius */
+            }
+
+            .tabs-container {
+                position: relative;
+                left: -16px;
+                width: 100vw;
+                max-width: 100vw;
+                margin: 0;
+                background: white;
+                z-index: 10;
+                opacity: 1 !important;
+            }
+
+            /* Make the tab content visible */
+            .tab-content {
+                margin-top: 16px;
+                padding: 0 16px; /* Add padding to tab content */
+                opacity: 1 !important;
+                position: relative;
+                z-index: 10;
+                background: white;
+            }
+
+            /* Ensure plan cards are visible */
+            .plan-card {
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            .queue-header {
+                background: white;
+                margin: 0 0 16px 0;
+                padding: 16px;
+                border-radius: 16px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                border-bottom: none;
+            }
+
+            .queue-header h2 {
+                font-size: 18px;
+                font-weight: 600;
+            }
+
+            /* Mobile Plan Cards */
+            .plan-card {
+                background: white;
+                border-radius: 16px;
+                padding: 20px 16px;
+                margin-bottom: 16px;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                           0 4px 12px rgba(0, 0, 0, 0.08),
+                           0 8px 24px rgba(0, 0, 0, 0.06);
+                transition: all 0.2s ease;
+            }
+
+            .plan-card:active {
+                transform: scale(0.98);
+                transition: transform 0.1s ease;
+            }
+
+            .plan-header {
+                flex-direction: column;
+                gap: 16px;
+                margin-bottom: 20px;
+            }
+
+            .client-info {
+                text-align: left;
+            }
+
+            .client-name {
+                font-size: 18px;
+                font-weight: 600;
+                margin-bottom: 4px;
+            }
+
+            .client-email {
+                font-size: 13px;
+                opacity: 0.7;
+            }
+
+            .client-submitted {
+                font-size: 12px;
+                opacity: 0.6;
+                margin-top: 2px;
+            }
+
+            /* Mobile Action Buttons - Swipe-friendly */
+            .plan-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr; /* Changed to 3 columns for 3 buttons */
+                gap: 8px;
+                width: 100%;
+            }
+
+            .btn {
+                border-radius: 8px; /* Slightly larger on mobile for touch */
+                padding: 8px 6px; /* More compact padding */
+                font-size: 11px; /* Smaller text */
+                font-weight: 500; /* Consistent with desktop */
+                justify-content: center;
+                align-items: center;
+                gap: 3px; /* Smaller gap */
+                min-height: 36px; /* More compact height but still touch-friendly */
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.06); /* Softer shadow */
+                transition: all 0.2s ease;
+            }
+
+            .btn:active {
+                transform: scale(0.95);
+                transition: transform 0.1s ease;
+            }
+
+            /* SVG icons now used instead of emoji spans */
+
+            /* Button order: View Plan | Edit | Approve */
+            .btn-view {
+                order: 1;
+                background: #6b7280; /* Flat grey - match desktop */
+                box-shadow: 0 1px 3px rgba(107, 114, 128, 0.2), 0 2px 6px rgba(107, 114, 128, 0.15);
+                border-color: #6b7280;
+            }
+
+            .btn-edit {
+                order: 2;
+                background: #3b82f6; /* Flat blue - match desktop */
+                box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2), 0 2px 6px rgba(59, 130, 246, 0.15);
+                border-color: #3b82f6;
+            }
+
+            .btn-approve {
+                order: 3;
+                background: #10b981; /* Flat green - match desktop */
+                box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2), 0 2px 6px rgba(16, 185, 129, 0.15);
+                border-color: #10b981;
+            }
+
+            /* Mobile Plan Details */
+            .plan-details {
+                padding: 12px;
+                margin-top: 12px;
+                background: white;
+                border-radius: 10px;
+                border: 1px solid #e5e5e5;
+            }
+
+            .detail-row {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .detail-row:not(:last-child) {
+                margin-bottom: 8px;
+            }
+
+            .detail-item {
+                padding: 0;
+                border-radius: 0;
+                border-left: none;
+                border-top: none;
+                text-align: center;
+                background: transparent;
+                box-shadow: none;
+                border-right: 1px solid #f0f0f0;
+            }
+
+            .detail-item:last-child {
+                border-right: none;
+            }
+
+            .detail-label {
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .detail-value {
+                font-size: 14px;
+                font-weight: 600;
+                color: #1a1a1a;
+                line-height: 1.2;
+            }
+
+            /* Mobile Empty States */
+            .empty-queue {
+                background: white;
+                border-radius: 16px;
+                padding: 40px 20px;
+                margin: 16px 0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            }
+
+            .empty-queue h3 {
+                font-size: 20px;
+                margin-bottom: 8px;
+            }
+
+            .empty-queue p {
+                font-size: 14px;
+            }
+
+            .loading {
+                background: white;
+                border-radius: 16px;
+                padding: 40px 20px;
+                margin: 16px 0;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            }
+
+            /* Mobile-specific color variations for stats */
+            .stat-card.pending-overdue {
+                border-color: #e74c3c;
+            }
+
+            .stat-card.pending-overdue .stat-number {
+                color: #e74c3c;
+            }
+
+            .stat-card.pending-today {
+                border-color: #f39c12;
+            }
+
+            .stat-card.pending-today .stat-number {
+                color: #f39c12;
+            }
+
+            .stat-card.approved {
+                border-color: #27ae60;
+            }
+
+            .stat-card.approved .stat-number {
+                color: #27ae60;
+            }
+
+            .stat-card.total {
+                border-color: #3498db;
+            }
+
+            .stat-card.total .stat-number {
+                color: #3498db;
+            }
+
+
+
+            /* Smooth scrolling for mobile */
+            html {
+                scroll-behavior: smooth;
+            }
+
+            /* iOS-style momentum scrolling */
+            .content-wrapper {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        /* Desktop text display rules */
+        .desktop-only {
+            display: inline;
+        }
+        
+        .mobile-only {
+            display: none;
+        }
+
+        /* Mobile-specific animations */
+        @media (max-width: 768px) {
+            @keyframes slideInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .plan-card {
+                animation: slideInUp 0.3s ease forwards;
+            }
+
+            .plan-card:nth-child(1) { animation-delay: 0.1s; }
+            .plan-card:nth-child(2) { animation-delay: 0.2s; }
+            .plan-card:nth-child(3) { animation-delay: 0.3s; }
+            .plan-card:nth-child(4) { animation-delay: 0.4s; }
+            .plan-card:nth-child(5) { animation-delay: 0.5s; }
+
+            /* Mobile Tab Styles */
+            .queue-header h2 {
+                display: none; /* Hide "Meal Plans" header on mobile */
+            }
+
+            .queue-section {
+                background: transparent; /* Remove card background */
+                padding: 0; /* Remove card padding */
+                margin: 0; /* Remove card margins */
+                box-shadow: none; /* Remove card shadow */
+                border: none; /* Remove card border */
+                border-radius: 0; /* Remove card border radius */
+            }
+
+            .queue-header {
+                margin: 0; /* Remove all margins */
+                padding: 0; /* Remove all padding */
+            }
+
+            .tabs-container {
+                margin: 0 calc(-50vw + 50%) 0 calc(-50vw + 50%);
+                width: 100vw;
+                background: white;
+                position: relative;
+                z-index: 10;
+                opacity: 1 !important;
+            }
+
+            .tabs {
+                padding: 0 16px; /* Add padding inside tabs */
+            }
+
+            .tab-button {
+                padding: 10px 16px;
+                font-size: 14px;
+                gap: 6px;
+            }
+
+            .tab-text {
+                font-size: 16px; /* Match mobile meal-header h2 size */
+                font-weight: 600; /* Match meal-header h2 weight */
+            }
+
+            .tab-count {
+                padding: 1px 6px;
+                font-size: 11px;
+                min-width: 18px;
+            }
+
+            .tab-content {
+                margin-top: 0; /* Remove top margin since search container provides spacing */
+                padding: 14px 0 0 0; /* Add top padding to create space above meal plan cards */
+            }
+
+            /* Ensure all content is visible on mobile */
+            .queue-section, .tabs-container, .tab-content, .plan-card, #queue-container, #complete-container {
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+
+            /* Reset any problematic z-index issues */
+            .queue-section {
+                position: static !important;
+                z-index: auto !important;
+            }
+
+            /* Remove just the shadow and border on mobile */
+            .queue-section {
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            /* Mobile Search Bar */
+            .search-container {
+                padding: 12px 4px; /* Add horizontal padding to match plan cards */
+                margin: 0;
+                background: transparent;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .search-bar {
+                padding: 10px 12px;
+                font-size: 16px; /* Prevent zoom on iOS */
+                max-width: 100%; /* Ensure it doesn't exceed container */
+            }
+
+            #search-input {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            /* Grey line separator removed */
+        }
+
+        /* Mobile Modal Adjustments */
+        @media (max-width: 768px) {
+            .modal-content {
+                height: 95vh; /* Slightly taller on mobile */
+                border-radius: 16px 16px 0 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-title {
+                font-size: 16px;
+            }
+
+            .modal-drag-handle {
+                width: 36px;
+                height: 5px;
+                background: #9ca3af;
+            }
+            
+            /* Ensure iframe content displays full width */
+            .modal-body {
+                padding: 0;
+                margin: 0;
+            }
+            
+            #meal-plan-iframe {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        /* Additional premium touches */
+        .stat-card.pending-overdue {
+            border-color: #e74c3c;
+        }
+
+        .stat-card.pending-overdue .stat-number {
+            color: #e74c3c;
+        }
+
+        .stat-card.pending-today {
+            border-color: #f39c12;
+        }
+
+        .stat-card.pending-today .stat-number {
+            color: #f39c12;
+        }
+
+        .stat-card.approved {
+            border-color: #27ae60;
+        }
+
+        .stat-card.approved .stat-number {
+            color: #27ae60;
+        }
+
+        .stat-card.total {
+            border-color: #3498db;
+        }
+
+        .stat-card.total .stat-number {
+            color: #3498db;
+        }
+
+        /* Financial Analytics Container */
+        .financial-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+            margin-bottom: 32px;
+        }
+
+        .financial-header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .financial-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        /* Financial Analytics Styling */
+        .financial-stats {
+            gap: 16px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .financial-stats .stat-card {
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03),
+                        0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .financial-stats .stat-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+                        0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .financial-stats .stat-card.revenue-today .stat-number {
+            color: #4b5563;
+        }
+
+        .financial-stats .stat-card.revenue-monthly .stat-number {
+            color: #4b5563;
+        }
+
+        .financial-stats .stat-card.revenue-all-time .stat-number {
+            color: #27ae60;
+        }
+
+        /* Meal Plan Analytics Container */
+        .meal-container {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px 2px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+            margin-bottom: 32px;
+        }
+
+        .meal-header {
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .meal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        /* Meal Plan Analytics Styling */
+        .meal-stats {
+            gap: 16px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .meal-stats .stat-card {
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03),
+                        0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .meal-stats .stat-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+                        0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Financial Analytics Container */
+        .financial-container {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px 2px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05),
+                        0 4px 12px rgba(0, 0, 0, 0.08),
+                        0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e5e5;
+            margin-bottom: 32px;
+        }
+
+        .financial-header {
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .financial-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        /* Financial Analytics Styling */
+        .financial-stats {
+            gap: 16px;
+        }
+
+        .financial-stats .stat-card {
+            border: 1px solid #e5e5e5;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03),
+                        0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .financial-stats .stat-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06),
+                        0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Sliding Popup Modal */
+        .meal-plan-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+        }
+
+        .modal-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 90vh;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(100%);
+            }
+        }
+
+        .modal-header {
+            position: relative;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .modal-drag-handle {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+            cursor: grab;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            color: #6b7280;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #1a1a1a;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            padding: 0;
+            margin: 0;
+        }
+
+        #meal-plan-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        /* Override iframe content margins */
+        #meal-plan-iframe {
+            transform: scale(1);
+            transform-origin: top left;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .modal-client-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .modal-client-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .modal-client-email {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <img src="/ss-logo.jpg" alt="Stephanie Sanzo" class="logo">
+                <div class="header-divider"></div>
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="sub-header">
+                <p>Review and approve meal plans for clients</p>
+            </div>
+        </div>
+
+
+
+        <div class="content-wrapper">
+            <!-- Financial Analytics Container -->
+            <div class="financial-container">
+                <div class="financial-header">
+                    <h2>💰 Financial Analytics</h2>
+                </div>
+                <div class="stats financial-stats">
+                    <div class="stat-card revenue-today">
+                        <div class="stat-number" id="today-revenue">$0</div>
+                        <div class="stat-label">Today's<br>Revenue</div>
+                    </div>
+                    <div class="stat-card revenue-monthly">
+                        <div class="stat-number" id="monthly-revenue">$0</div>
+                        <div class="stat-label">Monthly<br>Revenue</div>
+                    </div>
+                    <div class="stat-card revenue-all-time">
+                        <div class="stat-number" id="all-time-revenue">$0</div>
+                        <div class="stat-label">All-Time<br>Revenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Meal Plan Analytics Container -->
+            <div class="meal-container">
+                <div class="meal-header">
+                    <h2>📋 Meal Plan Analytics</h2>
+                </div>
+                <div class="stats meal-stats">
+                    <div class="stat-card pending-overdue">
+                        <div class="stat-number" id="pending-overdue-count">-</div>
+                        <div class="stat-label">
+                            <span class="desktop-only">Pending<br>(24hr+)</span>
+                            <span class="mobile-only">24hr+</span>
+                        </div>
+                    </div>
+                    <div class="stat-card pending-today">
+                        <div class="stat-number" id="pending-today-count">-</div>
+                        <div class="stat-label">
+                            <span class="desktop-only">Pending<br>(Today)</span>
+                            <span class="mobile-only">Today</span>
+                        </div>
+                    </div>
+                    <div class="stat-card approved">
+                        <div class="stat-number" id="approved-count">-</div>
+                        <div class="stat-label">
+                            <span class="desktop-only">Approved<br>Today</span>
+                            <span class="mobile-only">Approved</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="queue-section">
+                <div class="queue-header">
+                    <h2>📋 Meal Plans</h2>
+                    
+                    <!-- Twitter-like Tabs -->
+                    <div class="tabs-container">
+                        <div class="tabs">
+                            <button class="tab-button active" data-tab="pending">
+                                <span class="tab-text">Pending</span>
+                                <span class="tab-count" id="pending-tab-count">0</span>
+                            </button>
+                            <button class="tab-button" data-tab="complete">
+                                <span class="tab-text">Complete</span>
+                                <span class="tab-count" id="complete-tab-count">0</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-bar">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="m13 13 4.35 4.35" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Search by name or email..." />
+                        <button id="clear-search" class="clear-search" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <div id="pending-content" class="tab-pane active">
+                        <div id="queue-container">
+                            <div class="loading">Loading pending meal plans...</div>
+                        </div>
+                    </div>
+                    <div id="complete-content" class="tab-pane">
+                        <div id="complete-container">
+                            <div class="loading">Loading completed meal plans...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sliding Popup Modal -->
+    <div id="meal-plan-modal" class="meal-plan-modal">
+        <div class="modal-overlay" onclick="dashboard.closePlanModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-drag-handle"></div>
+                <div class="modal-client-info">
+                    <div class="modal-client-name" id="modal-client-name">Meal Plan</div>
+                    <div class="modal-client-email" id="modal-client-email"></div>
+                </div>
+                <button class="modal-close" onclick="dashboard.closePlanModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <iframe id="meal-plan-iframe" src="" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin Dashboard JavaScript
+        class AdminDashboard {
+            constructor() {
+                this.queueContainer = document.getElementById('queue-container');
+                this.completeContainer = document.getElementById('complete-container');
+                this.pendingTabCount = document.getElementById('pending-tab-count');
+                this.completeTabCount = document.getElementById('complete-tab-count');
+                this.isMobile = window.innerWidth <= 768;
+                this.currentTab = 'pending';
+                this.allPlans = []; // Store all plans for searching
+                this.allCompletedPlans = []; // Store all completed plans for searching
+                this.filteredPlans = []; // Store filtered plans
+                
+                // Initialize tabs
+                this.initializeTabs();
+                
+                // Initialize search
+                this.initializeSearch();
+                
+                this.loadQueue();
+                this.loadCompletedPlans();
+                this.loadStats();
+                this.loadFinancialData();
+                
+                // Auto-refresh disabled - manual refresh only
+
+                // Mobile-specific features
+                if (this.isMobile) {
+                    this.initMobileFeatures();
+                }
+
+                // Listen for orientation changes
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => {
+                        this.isMobile = window.innerWidth <= 768;
+                    }, 100);
+                });
+            }
+
+            initializeTabs() {
+                const tabButtons = document.querySelectorAll('.tab-button');
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const tabName = e.currentTarget.dataset.tab;
+                        this.switchTab(tabName);
+                    });
+                });
+            }
+
+            switchTab(tabName) {
+                // Update active tab button
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+                // Update active tab content
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                document.getElementById(`${tabName}-content`).classList.add('active');
+
+                this.currentTab = tabName;
+
+                // Clear search when switching tabs
+                const searchInput = document.getElementById('search-input');
+                const clearButton = document.getElementById('clear-search');
+                if (searchInput.value) {
+                    searchInput.value = '';
+                    clearButton.style.display = 'none';
+                }
+
+                // Add haptic feedback for mobile
+                if (this.isMobile && 'vibrate' in navigator) {
+                    navigator.vibrate(50);
+                }
+            }
+
+            initializeSearch() {
+                const searchInput = document.getElementById('search-input');
+                const clearButton = document.getElementById('clear-search');
+
+                // Search input event listener
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    this.handleSearch(query);
+                    
+                    // Show/hide clear button
+                    clearButton.style.display = query ? 'flex' : 'none';
+                });
+
+                // Clear search button
+                clearButton.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearButton.style.display = 'none';
+                    this.handleSearch('');
+                    searchInput.focus();
+                });
+
+                // Clear search on escape key
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        searchInput.value = '';
+                        clearButton.style.display = 'none';
+                        this.handleSearch('');
+                        searchInput.blur();
+                    }
+                });
+            }
+
+            handleSearch(query) {
+                if (!query) {
+                    // Show all plans when search is empty
+                    this.renderCurrentTab();
+                    return;
+                }
+
+                // Filter plans based on current tab and search query
+                let plansToFilter = [];
+                if (this.currentTab === 'pending') {
+                    plansToFilter = this.allPlans;
+                } else {
+                    plansToFilter = this.allCompletedPlans || [];
+                }
+
+                const filtered = plansToFilter.filter(plan => {
+                    const fullName = `${plan.clientData.first_name} ${plan.clientData.last_name}`.toLowerCase();
+                    const email = plan.clientData.email.toLowerCase();
+                    const searchTerm = query.toLowerCase();
+                    
+                    return fullName.includes(searchTerm) || email.includes(searchTerm);
+                });
+
+                this.renderFilteredPlans(filtered);
+            }
+
+            renderFilteredPlans(filteredPlans) {
+                const container = this.currentTab === 'pending' ? this.queueContainer : this.completeContainer;
+                
+                if (filteredPlans.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-queue">
+                            <h3>🔍 No results found</h3>
+                            <p>No meal plans match your search criteria.</p>
+                        </div>
+                    `;
+                } else {
+                    if (this.currentTab === 'pending') {
+                        this.renderQueue(filteredPlans);
+                    } else {
+                        this.renderCompletedPlans(filteredPlans);
+                    }
+                }
+            }
+
+            renderCurrentTab() {
+                // Re-render the current tab with all data
+                if (this.currentTab === 'pending') {
+                    this.loadQueue();
+                } else {
+                    this.loadCompletedPlans();
+                }
+            }
+
+            async loadCompletedPlans() {
+                try {
+                    const response = await fetch('/api/admin/completed');
+                    const completedPlans = await response.json();
+                    
+                    this.allCompletedPlans = completedPlans; // Store all completed plans for searching
+
+                    if (completedPlans.length === 0) {
+                        this.completeContainer.innerHTML = `
+                            <div class="empty-queue">
+                                <h3>📋 No completed plans yet</h3>
+                                <p>Completed meal plans will appear here after approval.</p>
+                            </div>
+                        `;
+                    } else {
+                        this.renderCompletedPlans(completedPlans);
+                    }
+                    
+                    // Update tab count
+                    this.completeTabCount.textContent = completedPlans.length;
+                } catch (error) {
+                    console.error('Error loading completed plans:', error);
+                    this.completeContainer.innerHTML = `
+                        <div class="empty-queue">
+                            <h3>❌ Error loading completed plans</h3>
+                            <p>Please refresh the page to try again.</p>
+                        </div>
+                    `;
+                    this.completeTabCount.textContent = '0';
+                }
+            }
+
+            renderCompletedPlans(plans) {
+                this.completeContainer.innerHTML = plans.map(plan => {
+                    const completedDate = new Date(plan.approvedAt);
+                    const formattedDate = completedDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    return `
+                        <div class="plan-card">
+                            <div class="plan-header">
+                                <div class="client-info">
+                                    <div class="client-name">${plan.clientData.first_name} ${plan.clientData.last_name}</div>
+                                    <div class="client-email">${plan.clientData.email}</div>
+                                    <div class="client-submitted">Submitted: ${formattedDate}</div>
+                                </div>
+                                <div class="plan-actions">
+                                    <button onclick="dashboard.viewPlan('${plan.id}')" class="btn btn-view">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        View Plan
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="plan-details">
+                                <div class="detail-row">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Approved</div>
+                                        <div class="detail-value">${formattedDate}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value" style="color: #27ae60;">✅ Completed</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Approved By</div>
+                                        <div class="detail-value">${plan.approvedBy || 'Admin'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            initMobileFeatures() {
+                // Add haptic feedback for buttons (if available)
+                document.addEventListener('click', (e) => {
+                    if (e.target.closest('.btn') && 'vibrate' in navigator) {
+                        navigator.vibrate(10);
+                    }
+                });
+            }
+
+
+
+            async refreshData() {
+                try {
+                    await Promise.all([
+                        this.loadQueue(),
+                        this.loadStats()
+                    ]);
+                } catch (error) {
+                    console.error('Error refreshing data:', error);
+                }
+            }
+
+            async loadQueue() {
+                try {
+                    const response = await fetch('/api/admin/queue');
+                    const queue = await response.json();
+                    
+                    this.allPlans = queue; // Store all plans for searching
+
+                    if (queue.length === 0) {
+                        this.queueContainer.innerHTML = `
+                            <div class="empty-queue">
+                                <h3>🎉 All caught up!</h3>
+                                <p>No meal plans pending review.</p>
+                            </div>
+                        `;
+                    } else {
+                        this.renderQueue(queue);
+                    }
+                    
+                    // Update pending tab count
+                    this.pendingTabCount.textContent = queue.length;
+                } catch (error) {
+                    console.error('Error loading queue:', error);
+                    this.queueContainer.innerHTML = `
+                        <div class="empty-queue">
+                            <h3>❌ Error loading queue</h3>
+                            <p>Please refresh the page to try again.</p>
+                        </div>
+                    `;
+                    this.pendingTabCount.textContent = '0';
+                }
+            }
+
+            renderQueue(queue) {
+                this.queueContainer.innerHTML = queue.map(plan => {
+                    const submittedDate = new Date(plan.timestamp);
+                    const formattedDate = submittedDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    return `
+                        <div class="plan-card">
+                            <div class="plan-header">
+                                <div class="client-info">
+                                    <div class="client-name">${plan.clientData.first_name} ${plan.clientData.last_name}</div>
+                                    <div class="client-email">${plan.clientData.email}</div>
+                                    <div class="client-submitted">Submitted: ${formattedDate}</div>
+                                </div>
+                                <div class="plan-actions">
+                                    <button onclick="dashboard.viewPlan('${plan.id}')" class="btn btn-view">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        View Plan
+                                    </button>
+                                    <button onclick="dashboard.editPlan('${plan.id}')" class="btn btn-edit">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    <button onclick="dashboard.approvePlan('${plan.id}')" class="btn btn-approve">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                        </svg>
+                                        <span style="font-weight: 700;">Approve</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="plan-details">
+                                <div class="detail-row">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Maintenance</div>
+                                        <div class="detail-value">${this.formatCalories(plan.nutritionTargets?.maintenance_calories || 0)}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Goal</div>
+                                        <div class="detail-value">${this.formatGoal(plan.clientData.goal)}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Average Calories</div>
+                                        <div class="detail-value">${this.calculateAverageCalories(plan.nutritionTargets)}</div>
+                                    </div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Diet Type</div>
+                                        <div class="detail-value">Carb Cycling</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Complexity</div>
+                                        <div class="detail-value">Moderate</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Preference</div>
+                                        <div class="detail-value">${this.formatDietaryStyle(plan.clientData.dietaryStyle || plan.clientData.dietType)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            formatGoal(goal) {
+                const goalMap = {
+                    'muscle_gain': 'Muscle Gain',
+                    'fat_loss': 'Fat Loss',
+                    'maintenance': 'Maintenance',
+                    'performance': 'Performance'
+                };
+                return goalMap[goal] || goal || 'Not specified';
+            }
+
+            formatActivityLevel(level) {
+                const levelMap = {
+                    'sedentary': 'Sedentary',
+                    'lightly_active': 'Lightly Active',
+                    'moderately_active': 'Moderately Active',
+                    'very_active': 'Very Active',
+                    'extremely_active': 'Extremely Active'
+                };
+                return levelMap[level] || level || 'Not specified';
+            }
+
+            formatCalories(calories) {
+                if (!calories) return '0 cal';
+                return `${calories.toLocaleString()} cal`;
+            }
+
+            calculateAverageCalories(nutritionTargets) {
+                if (!nutritionTargets) return '0 cal';
+                
+                let totalCalories = 0;
+                let daysCount = 0;
+                
+                // Assuming 4 training days, 2 rest days, 1 refeed day per week
+                if (nutritionTargets.training_day?.calories) {
+                    totalCalories += nutritionTargets.training_day.calories * 4;
+                    daysCount += 4;
+                }
+                if (nutritionTargets.rest_day?.calories) {
+                    totalCalories += nutritionTargets.rest_day.calories * 2;
+                    daysCount += 2;
+                }
+                if (nutritionTargets.refeed_day?.calories) {
+                    totalCalories += nutritionTargets.refeed_day.calories * 1;
+                    daysCount += 1;
+                }
+                
+                const average = daysCount > 0 ? Math.round(totalCalories / 7) : 0;
+                return `${average.toLocaleString()} cal`;
+            }
+
+            formatDietaryStyle(style) {
+                if (!style) return 'No Restrictions';
+                
+                const styleMap = {
+                    'no_restrictions': 'No Restrictions',
+                    'vegetarian': 'Vegetarian',
+                    'vegan': 'Vegan',
+                    'pescatarian': 'Pescatarian',
+                    'keto': 'Keto',
+                    'paleo': 'Paleo',
+                    'gluten_free': 'Gluten Free',
+                    'dairy_free': 'Dairy Free'
+                };
+                
+                return styleMap[style] || style;
+            }
+
+            async approvePlan(planId) {
+                if (!confirm('✅ Approve this meal plan?\n\nThe client will receive an email with their personalized plan.')) return;
+                
+                // Add loading state for mobile
+                const button = event.target.closest('.btn-approve');
+                const originalText = button.innerHTML;
+                
+                if (this.isMobile) {
+                    button.innerHTML = '<span>⏳</span> Approving...';
+                    button.disabled = true;
+                }
+                
+                try {
+                    const response = await fetch(`/api/admin/approve/${planId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        if (this.isMobile) {
+                            this.showToast('✅ Plan approved! Email sent to client.', 'success');
+                        } else {
+                            alert('✅ Plan approved! Email sent to client.');
+                        }
+                        this.refreshData();
+                    } else {
+                        if (this.isMobile) {
+                            this.showToast('❌ Error approving plan. Please try again.', 'error');
+                        } else {
+                            alert('❌ Error approving plan. Please try again.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error approving plan:', error);
+                    if (this.isMobile) {
+                        this.showToast('❌ Error approving plan. Please try again.', 'error');
+                    } else {
+                        alert('❌ Error approving plan. Please try again.');
+                    }
+                } finally {
+                    if (this.isMobile && button) {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                }
+            }
+
+            editPlan(planId) {
+                // Find the plan data for client info
+                const plan = this.allPlans.find(p => p.id === planId) || 
+                           this.allCompletedPlans.find(p => p.id === planId);
+                const clientInfo = plan ? {
+                    name: `${plan.clientData.first_name} ${plan.clientData.last_name}`,
+                    email: plan.clientData.email
+                } : null;
+                
+                // Open the plan editor in a modal instead of navigation
+                const editUrl = `/admin/edit-plan?planId=${planId}`;
+                this.openPlanModal(editUrl, clientInfo);
+            }
+
+            viewPlan(planId) {
+                // Find the plan data for client info
+                const plan = this.allPlans.find(p => p.id === planId) || 
+                           this.allCompletedPlans.find(p => p.id === planId);
+                const clientInfo = plan ? {
+                    name: `${plan.clientData.first_name} ${plan.clientData.last_name}`,
+                    email: plan.clientData.email
+                } : null;
+                
+                // Open the plan in a sliding modal instead of new window
+                const planUrl = `/plans/${planId}.html`;
+                this.openPlanModal(planUrl, clientInfo);
+            }
+
+            async rejectPlan(planId) {
+                const reason = prompt('❌ Reason for rejection:\n\n(This will be sent to the client)');
+                if (!reason) return;
+                
+                // Add loading state for mobile
+                const button = event.target.closest('.btn-reject');
+                const originalText = button.innerHTML;
+                
+                if (this.isMobile) {
+                    button.innerHTML = '<span>⏳</span> Rejecting...';
+                    button.disabled = true;
+                }
+                
+                try {
+                    const response = await fetch(`/api/admin/reject/${planId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+                    
+                    if (response.ok) {
+                        if (this.isMobile) {
+                            this.showToast('Plan rejected. Client will be notified.', 'warning');
+                        } else {
+                            alert('Plan rejected. Client will be notified.');
+                        }
+                        this.refreshData();
+                    } else {
+                        if (this.isMobile) {
+                            this.showToast('❌ Error rejecting plan. Please try again.', 'error');
+                        } else {
+                            alert('❌ Error rejecting plan. Please try again.');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error rejecting plan:', error);
+                    if (this.isMobile) {
+                        this.showToast('❌ Error rejecting plan. Please try again.', 'error');
+                    } else {
+                        alert('❌ Error rejecting plan. Please try again.');
+                    }
+                } finally {
+                    if (this.isMobile && button) {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                }
+            }
+
+            // Mobile toast notification system
+            showToast(message, type = 'info') {
+                if (!this.isMobile) return;
+
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                // Trigger animation
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/admin/stats');
+                    const stats = await response.json();
+                    
+                    document.getElementById('pending-overdue-count').textContent = stats.pendingOverdue || 0;
+                    document.getElementById('pending-today-count').textContent = stats.pendingToday || 0;
+                    document.getElementById('approved-count').textContent = stats.approvedToday || 0;
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                }
+            }
+
+            async loadFinancialData() {
+                try {
+                    const response = await fetch('/api/admin/financial');
+                    const financial = await response.json();
+                    
+                    // Helper function to round to nearest dollar
+                    const roundToDollar = (amount) => {
+                        const num = parseFloat(amount) || 0;
+                        return Math.round(num);
+                    };
+                    
+                    // Update financial cards
+                    document.getElementById('today-revenue').textContent = `$${roundToDollar(financial.today?.revenue)}`;
+                    document.getElementById('monthly-revenue').textContent = `$${roundToDollar(financial.monthly?.revenue)}`;
+                    document.getElementById('all-time-revenue').textContent = `$${roundToDollar(financial.allTime?.revenue)}`;
+                } catch (error) {
+                    console.error('Error loading financial data:', error);
+                    // Set default values if API fails
+                    document.getElementById('today-revenue').textContent = '$0';
+                    document.getElementById('monthly-revenue').textContent = '$0';
+                    document.getElementById('all-time-revenue').textContent = '$0';
+                }
+            }
+
+            // Modal functions
+            openPlanModal(planUrl, clientInfo = null) {
+                const modal = document.getElementById('meal-plan-modal');
+                const iframe = document.getElementById('meal-plan-iframe');
+                iframe.src = planUrl;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+                
+                // Set client info in the modal header
+                if (clientInfo) {
+                    document.getElementById('modal-client-name').textContent = clientInfo.name;
+                    document.getElementById('modal-client-email').textContent = clientInfo.email;
+                } else {
+                    document.getElementById('modal-client-name').textContent = 'Meal Plan';
+                    document.getElementById('modal-client-email').textContent = '';
+                }
+                
+                // Add closing animation when modal is closed
+                modal.querySelector('.modal-content').style.animation = 'slideUp 0.3s ease-out';
+                
+                // Wait for iframe to load and inject CSS to remove padding
+                iframe.onload = () => {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const style = iframeDoc.createElement('style');
+                        style.textContent = `
+                            body {
+                                margin: 0 !important;
+                                padding: 0 !important;
+                            }
+                            .container, .content-wrapper {
+                                padding: 0 !important;
+                                margin: 0 !important;
+                                max-width: 100% !important;
+                            }
+                            @media (max-width: 768px) {
+                                body {
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                }
+                                .container, .content-wrapper, .meal-plan-container {
+                                    padding: 0 !important;
+                                    margin: 0 !important;
+                                }
+                            }
+                        `;
+                        iframeDoc.head.appendChild(style);
+                    } catch (e) {
+                        console.log('Could not inject styles into iframe:', e);
+                    }
+                };
+            }
+
+            closePlanModal() {
+                const modal = document.getElementById('meal-plan-modal');
+                const modalContent = modal.querySelector('.modal-content');
+                
+                // Add slide down animation
+                modalContent.style.animation = 'slideDown 0.3s ease-out';
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto'; // Restore scrolling
+                    const iframe = document.getElementById('meal-plan-iframe');
+                    iframe.src = ''; // Clear iframe
+                }, 300);
+            }
+        }
+
+        // Initialize dashboard
+        const dashboard = new AdminDashboard();
+    </script>
+</body>
+</html> 

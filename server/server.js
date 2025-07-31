@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 // ==================================================================================
 // 🚀 MEAL PLANNING WEBHOOK SERVER
 // ==================================================================================
@@ -9,6 +12,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 
 // Import your modules
 const { calculateNutritionTargets } = require('../src/modules/Module-1-Calculations');
@@ -16,17 +20,41 @@ const { buildPersonalizedNutritionPlan } = require('../src/modules/Module-5-Meal
 const EmailService = require('./email-service');
 const ReviewQueue = require('./review-queue');
 
+// Import authentication routes
+const authRoutes = require('./routes/auth-routes');
+const AuthService = require('./services/auth-service');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+const baseUrl = process.env.BASE_URL || 'https://stephaniesanzo.com';
 
 // Initialize services
 const emailService = new EmailService();
 const reviewQueue = new ReviewQueue();
 
+// Initialize auth service
+const authService = require('./services/auth-service');
+
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static('public')); // Serve generated meal plans
 app.use('/static', express.static(path.join(__dirname, 'static'))); // Serve static assets
+
+// Add authentication routes
+app.use('/api/auth', authRoutes);
+
+// Add cookie parser for session management
+app.use(cookieParser());
+
+// Serve logo
+app.get('/ss-logo.jpg', (req, res) => {
+  res.sendFile(path.join(__dirname, 'ss-logo.jpg'));
+});
+
+// Serve logo
+app.get('/logo.jpg', (req, res) => {
+  res.sendFile(path.join(__dirname, 'logo.jpg'));
+});
 
 // Import plan editor routes
 const planEditorRoutes = require('./api/plan-editor');
@@ -85,7 +113,6 @@ app.post('/webhook/typeform', async (req, res) => {
     await fs.writeFile(filePath, mealPlanHTML);
     
     // Generate the access URL with custom domain
-    const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
     const planUrl = `${baseUrl}/plans/${fileName}`;
     
     console.log('✅ Meal plan generated:', planUrl);
@@ -131,14 +158,104 @@ app.get('/plans/:fileName', async (req, res) => {
   }
 });
 
-// Admin dashboard
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+// Simple test middleware
+function simpleAuthMiddleware(req, res, next) {
+  console.log('Simple auth middleware called');
+  console.log('Cookies:', req.cookies);
+  console.log('Admin session:', req.cookies?.adminSession);
+  
+  if (!req.cookies?.adminSession) {
+    console.log('No session, redirecting to login');
+    return res.redirect('/login');
+  }
+  
+  console.log('Session found, proceeding');
+  next();
+}
+
+// Test route to check authentication
+app.get('/test-auth', simpleAuthMiddleware, (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Authentication working',
+    session: req.cookies?.adminSession || 'No session'
+  });
+});
+
+// Admin dashboard - protected with authentication
+app.get('/admin', simpleAuthMiddleware, (req, res) => {
+  const filePath = path.join(__dirname, 'views', 'admin-dashboard.html');
+  
+  // Check if file exists
+  fs.access(filePath)
+    .then(() => {
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error('Error sending admin dashboard:', err);
+          res.status(500).send('Error loading admin dashboard');
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('Admin dashboard file not found:', err);
+      res.status(500).send('Admin dashboard file not found');
+    });
 });
 
 // Plan editor page
 app.get('/admin/edit-plan', (req, res) => {
-  res.sendFile(path.join(__dirname, 'plan-editor.html'));
+  const filePath = path.join(__dirname, 'views', 'plan-editor.html');
+  
+  fs.access(filePath)
+    .then(() => {
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error('Error sending plan editor:', err);
+          res.status(500).send('Error loading plan editor');
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('Plan editor file not found:', err);
+      res.status(500).send('Plan editor file not found');
+    });
+});
+
+// Add login page routes
+app.get('/login', (req, res) => {
+  const filePath = path.join(__dirname, 'views', 'login.html');
+  
+  fs.access(filePath)
+    .then(() => {
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error('Error sending login page:', err);
+          res.status(500).send('Error loading login page');
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('Login page file not found:', err);
+      res.status(500).send('Login page file not found');
+    });
+});
+
+app.get('/client-login', (req, res) => {
+  const filePath = path.join(__dirname, 'views', 'client-login.html');
+  
+  fs.access(filePath)
+    .then(() => {
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error('Error sending client login page:', err);
+          res.status(500).send('Error loading client login page');
+        }
+      });
+    })
+    .catch((err) => {
+      console.error('Client login page file not found:', err);
+      res.status(500).send('Client login page file not found');
+    });
 });
 
 // Admin API routes
@@ -178,27 +295,72 @@ app.post('/api/admin/reject/:planId', async (req, res) => {
   }
 });
 
+// Get completed meal plans
+app.get('/api/admin/completed', async (req, res) => {
+  try {
+    const completedPlans = await reviewQueue.getApprovedPlans();
+    res.json(completedPlans);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/admin/stats', async (req, res) => {
   try {
     const queue = await reviewQueue.getQueue();
-    const pending = queue.length;
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
-    // Get approved today
-    const today = new Date().toDateString();
+    // Separate pending plans by time
+    let pendingOverdue = 0;
+    let pendingToday = 0;
+    
+    queue.forEach(plan => {
+      const planDate = new Date(plan.timestamp);
+      if (planDate < twentyFourHoursAgo) {
+        pendingOverdue++;
+      } else {
+        pendingToday++;
+      }
+    });
+    
+    // Get approved today (placeholder for now)
     const approvedToday = 0; // TODO: Implement approved today count
     
     res.json({
-      pending,
+      pendingOverdue,
+      pendingToday,
       approvedToday,
-      total: pending + approvedToday
+      total: queue.length + approvedToday
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+// Financial Analytics from SamCart
+app.get('/api/admin/financial', async (req, res) => {
+  try {
+    const financialData = await samcartAPI.getFinancialDashboard();
+    res.json(financialData);
+  } catch (error) {
+    console.error('❌ Financial Analytics Error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      today: { revenue: '0.00', orders: 0 },
+      monthly: { revenue: '0.00', orders: 0 },
+      recentOrders: [],
+      customers: { total: 0, active: 0, newThisMonth: 0 }
+    });
+  }
+});
+
 // Load Typeform mapping
 const typeformMapping = require('../data/Typeform-Mapping.json');
+
+// Load SamCart API
+const SamCartAPI = require('./samcart-api');
+const samcartAPI = new SamCartAPI();
 
 // Map Typeform data to your userData structure
 function mapTypeformToUserData(formResponse) {
@@ -343,7 +505,7 @@ function generatePlanId(userData) {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Meal Planning Server running on port ${PORT}`);
-  console.log(`📍 Webhook endpoint: http://localhost:${PORT}/webhook/typeform`);
+  console.log(`📍 Webhook endpoint: ${baseUrl}/webhook/typeform`);
 });
 
 // Graceful shutdown

@@ -28,7 +28,13 @@ router.get('/admin/plan/:planId', async (req, res) => {
         const htmlContent = await fs.readFile(htmlPath, 'utf8');
         
         // Extract meal data from HTML
+        console.log('🔧 About to extract meal data...');
         const mealData = await extractMealDataFromHTML(htmlContent);
+        console.log('🔧 Meal data extracted:', { 
+            trainingCount: mealData.training?.length,
+            restCount: mealData.rest?.length,
+            refeedCount: mealData.refeed?.length
+        });
         
         res.json({
             id: planItem.id,
@@ -148,7 +154,123 @@ router.get('/admin/plan/:planId/preview', async (req, res) => {
 // Helper function to extract meal data from HTML
 async function extractMealDataFromHTML(htmlContent) {
     try {
-        // Extract meal data using regex patterns
+        // Extract meal data from the Module-6 generated JavaScript object
+        console.log('🚀 extractMealDataFromHTML called, HTML length:', htmlContent.length);
+        
+        // Find the start of mealPlanData object
+        const mealDataStart = htmlContent.indexOf('const mealPlanData = {');
+        if (mealDataStart === -1) {
+            console.error('❌ Could not find mealPlanData declaration in HTML');
+            return { training: [], rest: [], refeed: [] };
+        }
+        
+        // Find the matching closing brace - we need to count braces
+        let braceCount = 0;
+        let inString = false;
+        let escapeNext = false;
+        let stringChar = '';
+        let i = mealDataStart + 'const mealPlanData = '.length;
+        
+        for (; i < htmlContent.length; i++) {
+            const char = htmlContent[i];
+            
+            if (escapeNext) {
+                escapeNext = false;
+                continue;
+            }
+            
+            if (char === '\\') {
+                escapeNext = true;
+                continue;
+            }
+            
+            if (!inString) {
+                if (char === '"' || char === "'" || char === '`') {
+                    inString = true;
+                    stringChar = char;
+                } else if (char === '{') {
+                    braceCount++;
+                } else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                        // Found the end
+                        break;
+                    }
+                }
+            } else {
+                if (char === stringChar && !escapeNext) {
+                    inString = false;
+                    stringChar = '';
+                }
+            }
+        }
+        
+        if (braceCount !== 0) {
+            console.error('❌ Could not find matching closing brace for mealPlanData');
+            return { training: [], rest: [], refeed: [] };
+        }
+        
+        // Extract the object string
+        const objStart = htmlContent.indexOf('{', mealDataStart);
+        const objEnd = i + 1;
+        const mealDataStr = htmlContent.substring(objStart, objEnd);
+        
+        console.log('✅ Found mealPlanData object, length:', mealDataStr.length);
+        
+        // Parse the JavaScript object
+        console.log('🔍 Raw meal data string length:', mealDataStr.length);
+        console.log('🔍 First 100 chars:', mealDataStr.substring(0, 100));
+        
+        let mealPlanData;
+        try {
+            mealPlanData = eval('(' + mealDataStr + ')');
+        } catch (evalError) {
+            console.error('❌ Eval error:', evalError.message);
+            // Try Function constructor as safer alternative
+            try {
+                mealPlanData = new Function('return ' + mealDataStr)();
+            } catch (funcError) {
+                console.error('❌ Function constructor error:', funcError.message);
+                throw new Error('Could not parse meal plan data');
+            }
+        }
+        
+        console.log('🔍 Extracted meal plan data:', {
+            hasTraining: !!mealPlanData.training,
+            hasRest: !!mealPlanData.rest,
+            hasRefeed: !!mealPlanData.refeed,
+            trainingMealCount: mealPlanData.training?.meals?.length || 0
+        });
+        
+        // Convert to the format expected by the meal editor
+        const convertMeals = (dayData) => {
+            if (!dayData || !dayData.meals) return [];
+            
+            return dayData.meals.map(meal => ({
+                name: meal.name,
+                foods: meal.foods.map(food => ({
+                    name: food.name,
+                    amount: food.amount,
+                    calories: food.calories,
+                    protein: food.protein,
+                    carbs: food.carbs,
+                    fats: food.fats
+                }))
+            }));
+        };
+        
+        return {
+            training: convertMeals(mealPlanData.training),
+            rest: convertMeals(mealPlanData.rest),
+            refeed: convertMeals(mealPlanData.refeed)
+        };
+        
+    } catch (error) {
+        console.error('Error extracting meal data from JavaScript object:', error);
+        console.log('Falling back to HTML parsing...');
+        
+        // Fallback to old HTML parsing method
+        try {
         const mealPattern = /<div class="meal-card"[^>]*>[\s\S]*?<h3[^>]*>(.*?)<\/h3>[\s\S]*?<\/div>/g;
         const foodPattern = /<div class="food-item"[^>]*>[\s\S]*?<span class="food-name">(.*?)<\/span>[\s\S]*?<span class="food-amount">(.*?)<\/span>[\s\S]*?<span class="calories">([\d.]+)<\/span>[\s\S]*?<span class="protein">([\d.]+)g?<\/span>[\s\S]*?<span class="carbs">([\d.]+)g?<\/span>[\s\S]*?<span class="fats">([\d.]+)g?<\/span>/g;
         
@@ -158,7 +280,6 @@ async function extractMealDataFromHTML(htmlContent) {
             refeed: []
         };
         
-        // For now, extract from training day only
         let match;
         while ((match = mealPattern.exec(htmlContent)) !== null) {
             const mealHtml = match[0];
@@ -184,10 +305,10 @@ async function extractMealDataFromHTML(htmlContent) {
         }
         
         return meals;
-        
-    } catch (error) {
-        console.error('Error extracting meal data:', error);
+        } catch (fallbackError) {
+            console.error('Fallback HTML parsing also failed:', fallbackError);
         return { training: [], rest: [], refeed: [] };
+        }
     }
 }
 

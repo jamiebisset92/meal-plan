@@ -1,0 +1,38 @@
+# ==================================================================================
+# 🌍 SUPABASE ENVIRONMENT VARIABLES
+# ==================================================================================
+# Copy these to your .env file
+# ==================================================================================
+
+# ===== SERVER CONFIGURATION =====
+PORT=3000
+NODE_ENV=production
+BASE_URL=https://stephaniesanzo.com
+
+# ===== SUPABASE CONFIGURATION =====
+SUPABASE_URL=https://aampnumxitcerdvclbcv.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhbXBudW14aXRjZXJkdmNsYmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NDYxMDksImV4cCI6MjA2OTUyMjEwOX0.0V34f67g8oeJ2BY1nquQj0Rr3Mvq7Zw6OwFnqFVvXqU
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhbXBudW14aXRjZXJkdmNsYmN2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mzk0NjEwOSwiZXhwIjoyMDY5NTIyMTA5fQ.DNi5x77_Ce_R5mc7S11ZIMCi1u5ywKWGv0yLmcGsCuk
+
+# ===== SAMCART API (OPTIONAL) =====
+SAMCART_API_KEY=your_samcart_api_key
+
+# ===== TYPEFORM WEBHOOK (OPTIONAL) =====
+TYPEFORM_WEBHOOK_SECRET=your_typeform_webhook_secret
+
+# ===== SECURITY =====
+SESSION_SECRET=your_random_session_secret_here
+
+# ===== EMAIL (OPTIONAL) =====
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_email_password
+
+# ==================================================================================
+# 📋 INSTRUCTIONS
+# ==================================================================================
+# 1. Copy this file to .env
+# 2. Set up your database schema in Supabase
+# 3. Test the connection
+# ================================================================================== 

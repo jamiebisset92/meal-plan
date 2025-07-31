@@ -13,7 +13,7 @@
     "trainingDays": 4,
     "additionalSupplements": "essential_plus"
   },
-  "planUrl": "http://localhost:3000/plans/test-plan-001.html",
+  "planUrl": "https://stephaniesanzo.com/plans/test-plan-001.html",
   "status": "pending",
   "targets": {
     "calories": 2800,

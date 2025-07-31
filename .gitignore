@@ -9,6 +9,20 @@ yarn-error.log*
 .env.local
 .env.production
 
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+cookies.txt
+*.tmp
+*.temp
+
 # Generated meal plans
 public/plans/
 
@@ -18,10 +32,6 @@ data/progress/
 # Test outputs
 test-output-*.html
 *.test.html
-
-# OS files
-.DS_Store
-Thumbs.db
 
 # IDE files
 .vscode/
@@ -43,10 +53,7 @@ pids
 coverage/
 .nyc_output/
 
-# Temporary files
-tmp/
-temp/
-
 # Build outputs
 dist/
 build/ 
+.vercel

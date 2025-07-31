@@ -1,0 +1,18 @@
+name: meal-planning-system
+services:
+- name: web
+  source_dir: /
+  github:
+    repo: your-username/meal-planning-system
+    branch: main
+  run_command: npm start
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: BASE_URL
+    value: https://stephaniesanzo.com 

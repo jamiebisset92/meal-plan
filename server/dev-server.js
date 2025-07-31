@@ -174,8 +174,8 @@ app.get('/auto-refresh.js', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🎨 UI Development Server running!`);
-  console.log(`📱 Open: http://localhost:${PORT}`);
-  console.log(`🔄 Day Switcher: http://localhost:${PORT}/switch-day`);
+  console.log(`📱 Open: https://stephaniesanzo.com`);
+  console.log(`🔄 Day Switcher: https://stephaniesanzo.com/switch-day`);
   console.log(`🔄 Make changes to any module and refresh browser`);
   console.log(`⚡ Press 'R' in browser for auto-refresh mode`);
 }); 

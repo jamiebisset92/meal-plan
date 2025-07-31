@@ -1,0 +1,44 @@
+# ==================================================================================
+# 🌍 ENVIRONMENT VARIABLES FOR STEPHANIE SANZO NUTRITION
+# ==================================================================================
+# Copy this file to .env and fill in your actual values
+# ==================================================================================
+
+# ===== SERVER CONFIGURATION =====
+PORT=3000
+NODE_ENV=production
+BASE_URL=https://stephaniesanzo.com
+
+# ===== SUPABASE CONFIGURATION =====
+# Get these from your Supabase project settings
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# ===== SAMCART API (OPTIONAL) =====
+# For financial analytics in admin dashboard
+SAMCART_API_KEY=your_samcart_api_key
+
+# ===== TYPEFORM WEBHOOK (OPTIONAL) =====
+# For automatic meal plan generation
+TYPEFORM_WEBHOOK_SECRET=your_typeform_webhook_secret
+
+# ===== SECURITY =====
+# Generate a random string for session security
+SESSION_SECRET=your_random_session_secret_here
+
+# ===== EMAIL (OPTIONAL) =====
+# For sending meal plan notifications
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_email_password
+
+# ==================================================================================
+# 📋 SETUP INSTRUCTIONS
+# ==================================================================================
+# 1. Copy this file to .env
+# 2. Fill in your Supabase credentials
+# 3. Set up your domain and SSL certificates
+# 4. Configure your hosting provider
+# ================================================================================== 

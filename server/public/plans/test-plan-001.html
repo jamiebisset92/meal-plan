@@ -1,6 +1,6 @@
-<!DOCTYPE html>
+                <!DOCTYPE html>
 <html lang="en">
-<head>
+                <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>John's Interactive Meal Plan - Stephanie Sanzo Nutrition</title>
@@ -1954,8 +1954,8 @@
             }
         }
     </style>
-</head>
-<body>
+                </head>
+                <body>
     <div class="container">
         <div class="header">
             <div class="header-content">
@@ -2515,11 +2515,11 @@
             
             container.style.display = 'block';
             container.innerHTML = `
-                <div class="meal-card">
+                    <div class="meal-card">
                     <div class="meal-header">
                         <div class="meal-title">${postWorkout.name}</div>
                         <div class="meal-checkbox ${postWorkout.foods.every(food => food.checked) ? 'checked' : ''}" onclick="toggleAllPostWorkoutFoods()"></div>
-                    </div>
+                        </div>
                     <div class="meal-timing">Within 30 mins after training</div>
                     <div class="meal-body">
                         ${postWorkout.foods.map((food, foodIndex) => `
@@ -2529,9 +2529,9 @@
                                         <div class="food-name">${food.name}</div>
                                         <div class="food-amount">${food.amount}</div>
                                         <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
-                                    </div>
+                        </div>
                                     <div class="check-button ${food.checked ? 'checked' : ''}" onclick="togglePostWorkoutFood(${foodIndex})">
-                                    </div>
+                    </div>
                                 </div>
                             </div>
                         `).join('')}
@@ -2974,7 +2974,7 @@
             if (hasEnergyDrinks && energyDrinks) totalDrinkCalories += energyDrinks.calories || 0;
             
             container.innerHTML = `
-                <div class="meal-card">
+                    <div class="meal-card">
                     <div class="meal-header">
                         <div class="meal-title">Drinks</div>
                         <div class="meal-checkbox ${getAllDrinksChecked(coffee, energyDrinks) ? 'checked' : ''}" onclick="toggleAllDrinks()"></div>
@@ -2982,28 +2982,28 @@
                     <div class="meal-timing">Have any time throughout the day</div>
                     <div class="meal-body">
                         ${hasCoffee ? coffee.foods.map((food, foodIndex) => `
-                            <div class="food-item">
+                        <div class="food-item">
                                 <div class="food-item-main">
                                     <div class="food-info">
                                         <div class="food-name">${food.name}</div>
                                         <div class="food-amount">${food.amount}</div>
                                         <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
-                                    </div>
+                        </div>
                                     <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('coffee', ${foodIndex})">
                                     </div>
                                 </div>
                             </div>
                         `).join('') : ''}
                         ${hasEnergyDrinks ? energyDrinks.foods.map((food, foodIndex) => `
-                            <div class="food-item">
+                        <div class="food-item">
                                 <div class="food-item-main">
                                     <div class="food-info">
                                         <div class="food-name">${food.name}</div>
                                         <div class="food-amount">${food.amount}</div>
                                         <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
-                                    </div>
+                        </div>
                                     <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('energy', ${foodIndex})">
-                                    </div>
+                    </div>
                                 </div>
                             </div>
                         `).join('') : ''}
@@ -3819,5 +3819,5 @@
     </script>
     
     <!-- Modal removed - using inline alternatives instead -->
-</body>
-</html>
+                </body>
+                </html>

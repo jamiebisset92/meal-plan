@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Your Meal Plan - Stephanie Sanzo Nutrition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1a1a;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 16px;
+            padding: 12px;
+            background: #fdf2f2;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .success {
+            color: #27ae60;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .plan-id-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .plan-id-info h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .plan-id-info p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="/ss-logo.jpg" alt="Stephanie Sanzo" class="logo">
+        <h1>Client Login</h1>
+        <p class="subtitle">Enter your details to view your personalized nutrition plan</p>
+        
+        <div class="plan-id-info">
+            <h3>📋 Plan ID</h3>
+            <p>This is the unique identifier for your meal plan. You can find this in your email from Stephanie.</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="planId">Plan ID</label>
+                <input type="text" id="planId" name="planId" placeholder="e.g., test-plan-001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="your@email.com" required>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginBtn">
+                Access Meal Plan
+            </button>
+        </form>
+        
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        // Get plan ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const planIdFromUrl = urlParams.get('planId');
+        
+        if (planIdFromUrl) {
+            document.getElementById('planId').value = planIdFromUrl;
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const planId = document.getElementById('planId').value;
+            const email = document.getElementById('email').value;
+
+            // Show loading state
+            loginBtn.textContent = 'Accessing...';
+            loginBtn.classList.add('loading');
+            hideMessages();
+
+            try {
+                const response = await fetch('/api/auth/client/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ planId, email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Access granted! Loading your meal plan...');
+                    setTimeout(() => {
+                        window.location.href = `/plans/${planId}.html`;
+                    }, 1000);
+                } else {
+                    showError(data.error || 'Access denied. Please check your details.');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            } finally {
+                // Reset button state
+                loginBtn.textContent = 'Access Meal Plan';
+                loginBtn.classList.remove('loading');
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // Check if already logged in for this plan
+        async function checkSession() {
+            const planId = document.getElementById('planId').value;
+            if (!planId) return;
+
+            try {
+                const response = await fetch(`/api/auth/client/session/${planId}`);
+                if (response.ok) {
+                    window.location.href = `/plans/${planId}.html`;
+                }
+            } catch (error) {
+                // Session check failed, stay on login page
+            }
+        }
+
+        // Check session when plan ID changes
+        document.getElementById('planId').addEventListener('change', checkSession);
+    </script>
+</body>
+</html> 

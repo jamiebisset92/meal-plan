@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Edit Meal Plan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Mobile-First Design */
+        .editor-container {
+            min-height: 100vh;
+            background: white;
+        }
+
+        /* Day Selector */
+        .day-selector {
+            display: flex;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 12px;
+            margin-top: 16px;
+            margin-bottom: 20px;
+            margin-left: 16px;
+            margin-right: 16px;
+        }
+
+        .day-tab {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .day-tab.active {
+            background: white;
+            color: #1a1a1a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Macro Summary Card */
+        .macro-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 16px 20px 16px;
+            padding: 20px;
+            border-radius: 16px;
+            color: white;
+        }
+
+        .macro-title {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .macro-item {
+            text-align: center;
+        }
+
+        .macro-value {
+            font-size: 20px;
+            font-weight: 700;
+            display: block;
+        }
+
+        .macro-label {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Meals Container */
+        .meals-container {
+            padding: 0 16px 100px 16px; /* Bottom padding for floating button */
+        }
+
+        /* Meal Card */
+        .meal-card {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .meal-card.expanded {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .meal-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .meal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .meal-calories {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .meal-toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            transition: transform 0.2s ease;
+        }
+
+        .meal-card.expanded .meal-toggle {
+            transform: rotate(180deg);
+        }
+
+        /* Meal Content */
+        .meal-content {
+            display: none;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .meal-card.expanded .meal-content {
+            display: block;
+        }
+
+        /* Food Item */
+        .food-item {
+            padding: 16px;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .food-item:last-child {
+            border-bottom: none;
+        }
+
+        .food-info {
+            flex: 1;
+        }
+
+        .food-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .food-macros {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .food-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .food-amount {
+            font-size: 14px;
+            font-weight: 500;
+            color: #4b5563;
+            padding: 6px 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .swap-button {
+            padding: 6px 12px;
+            background: #eff6ff;
+            color: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .swap-button:active {
+            background: #dbeafe;
+        }
+
+        /* Add Food Button */
+        .add-food-button {
+            padding: 12px 16px;
+            width: 100%;
+            background: #f9fafb;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px;
+        }
+
+        .add-food-button:active {
+            background: #f3f4f6;
+        }
+
+        /* Floating Add Meal Button */
+        .add-meal-fab {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 56px;
+            height: 56px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 50;
+        }
+
+        .add-meal-fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Floating Save Button */
+        .save-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 50;
+        }
+
+        .save-fab:active {
+            transform: scale(0.9);
+        }
+
+        /* Food Swap Modal */
+        .swap-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .swap-modal-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 24px 24px 0 0;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        .swap-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e5e5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .swap-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .swap-modal-close {
+            width: 32px;
+            height: 32px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+        }
+
+        .swap-search {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .swap-search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .swap-options {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .swap-option {
+            padding: 16px;
+            background: #f9fafb;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .swap-option:active {
+            background: #f3f4f6;
+            transform: scale(0.98);
+        }
+
+        .swap-option-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+
+        .swap-option-macros {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        /* Desktop Styles */
+        @media (min-width: 768px) {
+            .editor-container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .day-selector {
+                margin-top: 140px;
+                margin-left: 24px;
+                margin-right: 24px;
+            }
+
+            .macro-summary {
+                margin: 0 24px 24px 24px;
+            }
+
+            .meals-container {
+                padding: 0 24px 120px 24px;
+            }
+
+            .add-meal-fab {
+                bottom: 32px;
+                right: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Day Selector -->
+        <div class="day-selector">
+            <button class="day-tab active" data-day="training">Training</button>
+            <button class="day-tab" data-day="rest">Rest</button>
+            <button class="day-tab" data-day="refeed">Refeed</button>
+        </div>
+
+        <!-- Macro Summary -->
+        <div class="macro-summary">
+            <div class="macro-title">Daily Targets</div>
+            <div class="macro-grid">
+                <div class="macro-item">
+                    <span class="macro-value" id="currentCalories">0</span>
+                    <span class="macro-label">Calories</span>
+                </div>
+                <div class="macro-item">
+                    <span class="macro-value" id="currentProtein">0g</span>
+                    <span class="macro-label">Protein</span>
+                </div>
+                <div class="macro-item">
+                    <span class="macro-value" id="currentCarbs">0g</span>
+                    <span class="macro-label">Carbs</span>
+                </div>
+                <div class="macro-item">
+                    <span class="macro-value" id="currentFats">0g</span>
+                    <span class="macro-label">Fats</span>
+                </div>
+                    </div>
+                </div>
+
+        <!-- Meals Container -->
+        <div class="meals-container" id="mealsContainer">
+            <div class="loading">Loading meal plan...</div>
+        </div>
+
+        <!-- Floating Add Meal Button -->
+        <button class="add-meal-fab" id="addMealBtn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M12 5v14m-7-7h14"/>
+            </svg>
+        </button>
+
+        <!-- Floating Save Button -->
+        <button class="save-fab" id="saveBtn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path d="M20 6L9 17l-5-5"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Food Swap Modal -->
+    <div class="swap-modal" id="swapModal">
+        <div class="swap-modal-content">
+            <div class="swap-modal-header">
+                <h3 class="swap-modal-title">Choose Alternative</h3>
+                <button class="swap-modal-close" id="closeSwapModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="swap-search">
+                <input type="text" class="swap-search-input" placeholder="Search foods..." id="swapSearchInput">
+            </div>
+            <div class="swap-options" id="swapOptions">
+                <!-- Options will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/plan-editor-mobile.js"></script>
+</body>
+</html>

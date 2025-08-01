@@ -1,841 +1,9 @@
-// Interactive HTML Generator for Module-6
-const foodDatabase = require('../utils/food-database-loader');
-
-// Supplement parsing functions
-function parseSupplementString(supplementString) {
-    if (!supplementString || typeof supplementString !== 'string') {
-        return [];
-    }
-
-    const supplements = [];
-    
-    // Split by common delimiters (+ or ,)
-    const parts = supplementString.split(/[+,]/).map(s => s.trim()).filter(s => s);
-    
-    parts.forEach(part => {
-        // Enhanced regex to capture various supplement formats
-        const patterns = [
-            // Standard format: "Tribulus 1000mg AM"
-            /^([A-Za-z0-9\s\-()]+?)\s+(\d+(?:\.\d+)?)\s*(mg|g|IU|mcg|ml|billion CFU|CFU)(?:\s+(AM|PM|before bed|with meals?|on empty stomach))?/i,
-            // Format with parentheses: "Vitamin D3 (5000IU)"
-            /^([A-Za-z0-9\s\-]+?)\s*\((\d+(?:\.\d+)?)\s*(mg|g|IU|mcg|ml)\)/i,
-            // Format with dash: "B-Complex - methylated"
-            /^([A-Za-z0-9\s\-]+?)(?:\s+-\s+([A-Za-z\s]+))?$/i,
-            // Simple name only format
-            /^([A-Za-z0-9\s\-()]+)$/i
-        ];
-        
-        let matched = false;
-        
-        for (const pattern of patterns) {
-            const match = part.match(pattern);
-            if (match) {
-                let name = match[1].trim();
-                let dose = match[2] || '';
-                let unit = match[3] || '';
-                let timing = match[4] || '';
-                
-                // Clean up the name
-                name = name.replace(/\s+/g, ' ').trim();
-                
-                // Handle special cases
-                if (name.toLowerCase().includes('vitamin d') && !name.includes('3')) {
-                    name = name.replace(/vitamin d/i, 'Vitamin D3');
-                }
-                
-                // Format dose and unit
-                const amount = dose && unit ? dose + unit : dose || 'As directed';
-                
-                supplements.push({
-                    name: name,
-                    amount: amount,
-                    timing: timing || 'As directed',
-                    fullDescription: part
-                });
-                
-                matched = true;
-                break;
-            }
-        }
-        
-        // If no pattern matched, use the whole string as name
-        if (!matched) {
-            supplements.push({
-                name: part.trim(),
-                amount: 'As directed',
-                timing: 'As directed',
-                fullDescription: part
-            });
-        }
-    });
-    
-    return supplements;
-}
-
-function getSupplementPriority(supplementCategory, supplementName, tier) {
-    // Essential supplements
-    if (supplementCategory === 'age_optimized_daily_foundation' || 
-        supplementCategory === 'Daily Foundation' ||
-        (supplementName.toLowerCase().includes('protein') && tier === 'protein_only') ||
-        supplementName.toLowerCase().includes('vitamin d') ||
-        supplementName.toLowerCase().includes('b-complex') ||
-        supplementName.toLowerCase().includes('magnesium')) {
-        return 'Essential';
-    }
-    
-    // High priority supplements
-    if (supplementCategory === 'energy_vitality_stack' || 
-        supplementCategory === 'Energy & Vitality' ||
-        supplementName.toLowerCase().includes('creatine') ||
-        supplementName.toLowerCase().includes('tribulus') ||
-        supplementName.toLowerCase().includes('red ginseng') ||
-        supplementName.toLowerCase().includes('omega-3')) {
-        return 'High';
-    }
-    
-    // Important supplements
-    if (supplementCategory === 'recovery_sleep_stack' || 
-        supplementCategory === 'Recovery & Sleep' ||
-        supplementName.toLowerCase().includes('ashwagandha') ||
-        supplementName.toLowerCase().includes('glycine') ||
-        supplementName.toLowerCase().includes('melatonin')) {
-        return 'Important';
-    }
-    
-    // Optional supplements
-    return 'Optional';
-}
-
-function getSupplementTiming(userData, supplementName, defaultTiming) {
-    const name = supplementName.toLowerCase();
-    
-    // Calculate total caffeine servings
-    let totalCaffeineServings = 0;
-    if (userData.drinksCoffee === "Yes" && userData.numberOfCoffees) {
-        totalCaffeineServings += parseInt(userData.numberOfCoffees) || 0;
-    }
-    if (userData.otherCaffeine === "Energy Drinks" && userData.energyDrinksPerDay) {
-        totalCaffeineServings += parseInt(userData.energyDrinksPerDay) || 0;
-    }
-    
-    // High caffeine user adjustments (4+ servings)
-    if (totalCaffeineServings >= 4) {
-        if (name.includes('tribulus') || name.includes('ginseng') || name.includes('energy')) {
-            return defaultTiming + ' (take 30-60min before first coffee)';
-        }
-        if (name.includes('l-theanine')) {
-            return 'With each coffee serving';
-        }
-    }
-    
-    // Standard timing adjustments
-    if (name.includes('magnesium') || name.includes('glycine') || name.includes('melatonin')) {
-        return '30-60min before bed';
-    }
-    
-    if (name.includes('ashwagandha') && defaultTiming.toLowerCase().includes('pm')) {
-        return 'With dinner';
-    }
-    
-    if (name.includes('creatine')) {
-        return 'Post-workout or anytime';
-    }
-    
-    if (name.includes('vitamin d')) {
-        return 'Morning with breakfast';
-    }
-    
-    return defaultTiming;
-}
-
-function formatSupplementsForTable(supplements, userData) {
-    return supplements.map(supp => {
-        const priority = getSupplementPriority(supp.category || '', supp.name, userData.supplementTier || 'protein_only');
-        const timing = getSupplementTiming(userData, supp.name, supp.timing);
-        
-        // Determine with/without food
-        let withFood = 'With food';
-        const name = supp.name.toLowerCase();
-        
-        if (name.includes('tribulus') || name.includes('ginseng')) {
-            withFood = 'Empty stomach*';
-        } else if (name.includes('glycine') || name.includes('melatonin')) {
-            withFood = 'Empty stomach';
-        } else if (name.includes('creatine')) {
-            withFood = 'Anytime';
-        } else if (name.includes('omega') || name.includes('vitamin d') || name.includes('vitamin a') || 
-                   name.includes('vitamin e') || name.includes('vitamin k')) {
-            withFood = 'With food (fat)';
-        }
-        
-        return {
-            name: supp.name,
-            amount: supp.amount,
-            timing: timing,
-            withFood: withFood,
-            priority: priority,
-            checked: false
-        };
-    });
-}
-
-// Water intake calculation function based on original RTF logic
-function calculateWaterIntake(userData, targets) {
-  console.log('💧 Calculating water intake for user:', userData.first_name);
-  
-  // Get base water calculation from Module-51-Calculations.js logic
-  let baseWaterMl = 3000; // Default
-  
-  // Use hydration data if available from targets
-  if (targets.hydration && targets.hydration.training_day) {
-    baseWaterMl = targets.hydration.training_day.ml;
-  } else {
-    // Fallback calculation similar to Module-51
-    const weight_kg = userData.weightUnit === 'lb' ? 
-      parseFloat(userData.weight) * 0.453592 : 
-      parseFloat(userData.weight);
-    
-    if (userData.gender === 'FEMALE') {
-      baseWaterMl = 28 * weight_kg;
-    } else {
-      baseWaterMl = 30 * weight_kg;
-    }
-    
-    // Activity level adjustment
-    const activityMultipliers = {
-      "Sedentary": 1.0,
-      "Lightly Active": 1.1,
-      "Moderately Active": 1.2,
-      "Active": 1.3,
-      "Very Active": 1.4
-    };
-    baseWaterMl *= activityMultipliers[userData.activityLevel] || 1.2;
-    
-    // Goal adjustment
-    if (userData.goal && userData.goal.includes("Lose Weight")) {
-      baseWaterMl *= 1.10;
-    }
-    
-    // Caffeine adjustment
-    let totalCaffeineServings = 0;
-    if (userData.drinksCoffee === "Yes" && userData.numberOfCoffees) {
-      totalCaffeineServings += parseInt(userData.numberOfCoffees) || 0;
-    }
-    if (userData.otherCaffeine === "Energy Drinks" && userData.energyDrinksPerDay) {
-      totalCaffeineServings += parseInt(userData.energyDrinksPerDay) || 0;
-    }
-    if (totalCaffeineServings >= 3) {
-      baseWaterMl *= 1.10;
-    }
-    
-    // Round to nearest 250ml
-    baseWaterMl = Math.round(baseWaterMl / 250) * 250;
-    
-    // Apply caps
-    if (baseWaterMl > 5000) baseWaterMl = 5000;
-    if (baseWaterMl < 2000) baseWaterMl = 2000;
-  }
-  
-  // Calculate morning (25%) and daily (75%) portions
-  const morningWater = Math.round((baseWaterMl * 0.25) / 100) * 100; // Round to nearest 100ml
-  const dailyWater = Math.round(baseWaterMl * 0.75);
-  
-  // Format for display
-  function formatWater(ml, isImperial) {
-    if (isImperial) {
-      const oz = Math.round(ml * 0.033814);
-      return `${oz} oz`;
-    } else {
-      if (ml >= 1000) {
-        return `${(ml / 1000).toFixed(1)}L`;
-      } else {
-        return `${ml}ml`;
-      }
-    }
-  }
-  
-  const isImperial = userData.weightUnit === 'lb';
-  
-  return {
-    total: baseWaterMl,
-    morning: morningWater,
-    daily: dailyWater,
-    morningFormatted: formatWater(morningWater, isImperial),
-    dailyFormatted: formatWater(dailyWater, isImperial),
-    totalFormatted: formatWater(baseWaterMl, isImperial)
-  };
-}
-
-/**
- * Generate interactive HTML meal plan
- * @param {Array} meals - Array of meal objects
- * @param {Object} targets - Macro targets
- * @param {Object} userData - User data
- * @param {Object} postWorkout - Post-workout nutrition
- * @param {Object} coffee - Coffee nutrition
- * @param {Object} energyDrinks - Energy drinks nutrition
- * @param {Object} snacks - Snacks nutrition
- * @param {Object} alcohol - Alcohol nutrition
- * @param {Object} supplementsData - Supplement data from Module-57-Supplements.js
- * @returns {string} - Complete HTML
- */
-function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, energyDrinks, snacks, alcohol, supplementsData) {
-  
-  console.log('🎨 generateInteractiveHTML called with:', {
-    meals: meals?.length,
-    targets: !!targets,
-    userData: !!userData,
-    postWorkout: !!postWorkout,
-    coffee: !!coffee,
-    energyDrinks: !!energyDrinks,
-    snacks: !!snacks,
-    alcohol: !!alcohol,
-    supplementsData: !!supplementsData
-  });
-
-  // Extract training schedule and cooking preferences if available
-  const trainingAnalysis = userData.trainingAnalysis || null;
-  const cookingPreferences = userData.cookingPreferences || null;
-
-  // Initialize processedSupplementsData early to avoid hoisting issues
-  let processedSupplementsData = supplementsData;
-  
-  // Add detailed meal structure logging
-  console.log('🍽️ Meals structure debug:');
-  if (meals && meals.length > 0) {
-    console.log(`  Total meals: ${meals.length}`);
-    meals.forEach((meal, index) => {
-      console.log(`  Meal ${index + 1} structure:`, {
-        name: meal.name,
-        hasComponents: !!meal.components,
-        hasFoods: !!meal.foods,
-        hasTotals: !!meal.totals,
-        hasCalories: meal.calories !== undefined,
-        hasProtein: meal.protein !== undefined,
-        templateId: meal.templateId,
-        keys: Object.keys(meal)
-      });
-      
-      // Check food structure
-      if (meal.foods && meal.foods.length > 0) {
-        console.log(`    First food item:`, meal.foods[0]);
-      } else if (meal.components) {
-        console.log(`    Components:`, Object.keys(meal.components));
-      }
-    });
-  }
-  
-  // Add error handling and logging
-  console.log('🎨 generateInteractiveHTML called with:', {
-    mealsCount: meals?.length,
-    hasPostWorkout: !!postWorkout,
-    hasCoffee: !!coffee,
-    hasEnergyDrinks: !!energyDrinks,
-    hasSupplements: !!supplementsData,
-    supplementsStructure: supplementsData ? Object.keys(supplementsData) : null,
-    postWorkoutStructure: postWorkout ? Object.keys(postWorkout) : null,
-    coffeeStructure: coffee ? Object.keys(coffee) : null,
-    energyDrinksStructure: energyDrinks ? Object.keys(energyDrinks) : null
-  });
-
-  // Transform meals to match expected structure
-  const transformedMeals = meals.map((meal, index) => {
-    // Handle both formats: meal.totals (old) and direct properties (template)
-    const totals = meal.totals || {
-      calories: meal.calories || 0,
-      protein: meal.protein || 0,
-      carbs: meal.carbs || 0,
-      fiber: meal.fiber || 0,
-      fats: meal.fats || 0
-    };
-    
-    const transformedFoods = (meal.foods || []).map(food => ({
-      name: food.name || food.food || 'Unknown Food',
-      amount: food.amount || '0g',
-      calories: food.calories || 0,
-      protein: food.protein || 0,
-      carbs: food.carbs || 0,
-      fiber: food.fiber || 0,
-      fats: food.fats || 0,
-      checked: food.checked || false,
-      macros: `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`
-    }));
-    
-    return {
-      name: meal.name,
-      totals: totals,
-      foods: transformedFoods,
-      templateId: meal.templateId // Preserve template ID for debugging
-    };
-  });
-
-  // Transform post-workout if exists
-  const transformedPostWorkout = postWorkout ? {
-    name: postWorkout.name || 'Post-Workout Nutrition',
-    totals: {
-      calories: postWorkout.calories || postWorkout.totals?.calories || 0,
-      protein: postWorkout.protein || postWorkout.totals?.protein || 0,
-      carbs: postWorkout.carbs || postWorkout.totals?.carbs || 0,
-      fiber: postWorkout.fiber || postWorkout.totals?.fiber || 0,
-      fats: postWorkout.fats || postWorkout.totals?.fats || 0
-    },
-    foods: (postWorkout.foods || []).map(food => ({
-      name: food.name,
-      amount: food.amount,
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fiber: food.fiber,
-      fats: food.fats,
-      checked: food.checked || false,
-      macros: `${food.protein}g P • ${food.carbs}g C • ${food.fats}g F`
-    })),
-    timing: postWorkout.timing,
-    notes: postWorkout.notes
-  } : null;
-
-  // Transform coffee if exists
-  const transformedCoffee = coffee ? {
-    name: 'Coffee',
-    totals: coffee.totals,
-    foods: coffee.items.map(food => ({
-      name: food.name,
-      amount: food.amount,
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fiber: food.fiber,
-      fats: food.fats,
-      checked: food.checked || false,
-      macros: `${food.protein}g P • ${food.carbs}g C • ${food.fats}g F`
-    })),
-    timing: 'throughout day',
-    notes: `${coffee.numberOfCoffees} ${coffee.coffeeType}`
-  } : null;
-
-  // Transform energy drinks if exists
-  const transformedEnergyDrinks = energyDrinks ? {
-    name: 'Energy Drinks',
-    totals: energyDrinks.totals,
-    foods: energyDrinks.items.map(food => ({
-      name: food.name,
-      amount: food.amount,
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fiber: food.fiber,
-      fats: food.fats,
-      checked: food.checked || false,
-      macros: `${food.protein}g P • ${food.carbs}g C • ${food.fats}g F`
-    })),
-    timing: 'throughout day',
-    notes: `${energyDrinks.numberOfDrinks} ${energyDrinks.drinkType}`
-  } : null;
-
-  // Transform snacks if exists
-  const transformedSnacks = snacks ? {
-    name: snacks.name || 'Snacks & Drinks',
-    totals: snacks.totals,
-    foods: (snacks.foods || snacks.items || []).map(food => ({
-      name: food.name,
-      amount: food.amount,
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fiber: food.fiber,
-      fats: food.fats,
-      checked: food.checked || false,
-      isDietDrink: food.isDietDrink || false,
-      macros: food.isDietDrink ? '' : `${food.protein}g P • ${food.carbs}g C • ${food.fats}g F`
-    })),
-    timing: snacks.timing || 'Throughout day',
-    notes: snacks.notes || ''
-  } : null;
-
-  // Calculate water intake
-  const waterIntake = calculateWaterIntake(userData, targets);
-  console.log('💧 Water intake calculated:', waterIntake);
-
-  // Create the data object for the frontend
-  const data = {
-    meals: transformedMeals,
-    targets: {
-      calories: targets.calories || 2000,
-      protein: targets.protein || 150,
-      carbs: targets.hierarchical?.carb_range?.min || 200,
-      fiber: targets.hierarchical?.fiber_range?.min || 25,
-      fats: targets.fat || targets.fats || 65
-    },
-    postWorkout: transformedPostWorkout,
-    coffee: transformedCoffee,
-    energyDrinks: transformedEnergyDrinks,
-    snacks: transformedSnacks,
-    waterIntake: waterIntake,
-    userData: userData
-  };
-  
-  const methodology = targets.methodology || 'moderate';
-  
-  // Categorize supplements early so they're available for all sections
-  console.log('🔍 About to categorize supplements with:', processedSupplementsData);
-  const categorizedSupplements = categorizeSupplements(processedSupplementsData);
-  
-  // Convert meal data to interactive format
-  const formatMealData = (meals, targets) => {
-    // Use the meals parameter passed to this function
-    return meals.map(meal => {
-      const mealName = meal.name.toLowerCase();
-      let mealSupplements = [];
-      
-      // Get supplements for this meal type
-      if (categorizedSupplements) {
-        if (mealName.includes('breakfast') || mealName.includes('upon waking') || mealName.includes('smoothie')) {
-          mealSupplements = categorizedSupplements.breakfast || [];
-        } else if (mealName.includes('lunch') || mealName.includes('midday')) {
-          mealSupplements = categorizedSupplements.lunch || [];
-        } else if (mealName.includes('dinner') || mealName.includes('evening')) {
-          mealSupplements = categorizedSupplements.dinner || [];
-        } else if (mealName.includes('snack')) {
-          mealSupplements = categorizedSupplements.snack || [];
-        }
-      }
-      
-      // Handle both formats safely
-      const totals = meal.totals || {};
-      const calories = totals.calories || meal.calories || 0;
-      
-      return {
-        name: meal.name || 'Meal',
-        calories: Math.round(calories),
-        foods: (meal.foods || []).map(food => ({
-          name: food.name || 'Unknown Food',
-          amount: food.amount || '0g',
-          macros: food.macros || `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`,
-          calories: Math.round(food.calories || 0),
-          protein: food.protein || 0,
-          carbs: food.carbs || 0,
-          fats: food.fats || 0,
-          checked: food.checked !== undefined ? food.checked : false
-        })),
-        supplements: mealSupplements,
-        templateId: meal.templateId // Preserve for debugging
-      };
-    });
-  };
-  
-  // Add post-workout data if available
-  const postWorkoutMeal = postWorkout ? {
-    name: postWorkout.name || 'Post-Workout Nutrition',
-    calories: Math.round(postWorkout.calories || 0),
-    timing: postWorkout.timing || 'Post-workout',
-    notes: postWorkout.notes || 'Consume within 30 minutes after training',
-    foods: (postWorkout.foods || []).map(food => ({
-      name: food.name || '',
-      amount: food.amount || '',
-      macros: `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`,
-      calories: Math.round(food.calories || 0),
-      protein: food.protein || 0,
-      carbs: food.carbs || 0,
-      fats: food.fats || 0,
-      checked: false
-    })),
-    supplements: categorizedSupplements ? categorizedSupplements.postWorkout : []
-  } : null;
-
-  // Add coffee data if available
-  const coffeeData = coffee && coffee.totals ? {
-    name: "Coffee",
-    calories: Math.round(coffee.totals.calories || 0),
-    timing: "Throughout day",
-    notes: `${coffee.numberOfCoffees || 1} ${coffee.numberOfCoffees === 1 ? 'cup' : 'cups'} of ${coffee.coffeeType || 'Coffee'}`,
-    foods: (coffee.items || []).map(food => ({
-      name: food.name || '',
-      amount: food.amount || '',
-      macros: `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`,
-      calories: Math.round(food.calories || 0),
-      protein: food.protein || 0,
-      carbs: food.carbs || 0,
-      fats: food.fats || 0,
-      checked: false
-    }))
-  } : null;
-
-  // Add energy drink data if available
-  const energyDrinkData = energyDrinks && energyDrinks.totals ? {
-    name: "Energy Drinks",
-    calories: Math.round(energyDrinks.totals.calories || 0),
-    timing: "Pre-workout",
-    notes: `${energyDrinks.numberOfDrinks || 1} ${energyDrinks.numberOfDrinks === 1 ? 'can' : 'cans'} of ${energyDrinks.drinkType || 'Energy Drink'}`,
-    foods: (energyDrinks.items || []).map(food => ({
-      name: food.name || '',
-      amount: food.amount || '',
-      macros: `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`,
-      calories: Math.round(food.calories || 0),
-      protein: food.protein || 0,
-      carbs: food.carbs || 0,
-      fats: food.fats || 0,
-      checked: false
-    }))
-  } : null;
-
-  // Add snacks data if available  
-  const snacksData = snacks && snacks.totals ? {
-    name: snacks.name || "Snacks & Drinks",
-    calories: Math.round(snacks.totals.calories || 0),
-    timing: snacks.timing || "Throughout day",
-    notes: snacks.notes || '',
-    foods: (snacks.items || []).map(food => ({
-      name: food.name || '',
-      amount: food.amount || '',
-      macros: food.isDietDrink ? '' : `${Math.round(food.protein || 0)}g P • ${Math.round(food.carbs || 0)}g C • ${Math.round(food.fats || 0)}g F`,
-      calories: Math.round(food.calories || 0),
-      protein: food.protein || 0,
-      carbs: food.carbs || 0,
-      fats: food.fats || 0,
-      isDietDrink: food.isDietDrink || false,
-      checked: false
-    }))
-  } : null;
-
-  // Use supplements data if available (already processed by buildPrecisionMealPlan)
-  if (processedSupplementsData) {
-    console.log('📊 Using processed supplements data:', processedSupplementsData);
-  }
-  
-  // Function to categorize supplements by timing
-  function categorizeSupplements(supplementsData) {
-    console.log('🔍 categorizeSupplements called with:', supplementsData);
-    if (!supplementsData || !supplementsData.supplements) {
-      console.log('❌ No supplements data or supplements array');
-      return null;
-    }
-    
-    console.log('🔍 Supplements array:', supplementsData.supplements);
-    console.log('🔍 Supplement tier:', supplementsData.tier);
-    
-    const categorized = {
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snack: [],
-      postWorkout: [],
-      morning: [],
-      evening: [],
-      daily: []
-    };
-    
-    // Process all supplement tiers
-    supplementsData.supplements.forEach((supp, index) => {
-      console.log(`🔍 Processing supplement ${index}:`, supp);
-      
-      // Parse the supplement description to extract individual supplements
-      const parsedSupplements = parseSupplementString(supp.description);
-      console.log(`🔍 Parsed supplements:`, parsedSupplements);
-      
-      // Create simple supplement objects for meal integration
-      parsedSupplements.forEach(ps => {
-        const simpleSupplement = {
-          name: ps.name,
-          amount: ps.amount || 'As directed',
-          priority: supp.priority || 'Essential',
-          timing: ps.timing || supp.timing || 'daily',
-          checked: false
-        };
-        
-        // Categorize based on timing - check both parsed timing and supplement timing
-        const suppTiming = (supp.timing || '').toLowerCase();
-        const parsedTiming = (ps.timing || '').toLowerCase();
-        const timing = parsedTiming || suppTiming;
-        
-        console.log(`🔍 Categorizing ${ps.name} with timing: "${timing}" (supp: "${suppTiming}", parsed: "${parsedTiming}")`);
-        
-        if (timing.includes('with meal') || timing.includes('daily through meal') || timing.includes('with main meal')) {
-          // Add to all main meals
-          categorized.breakfast.push(simpleSupplement);
-          categorized.lunch.push(simpleSupplement);
-          categorized.dinner.push(simpleSupplement);
-          console.log(`📝 Added ${ps.name} to main meals`);
-        } else if (timing.includes('morning') || timing.includes('before breakfast') || parsedTiming.includes('am')) {
-          categorized.morning.push(simpleSupplement);
-          console.log(`🌅 Added ${ps.name} to morning`);
-        } else if (timing.includes('evening') || parsedTiming.includes('pm') || timing.includes('before bed') || timing.includes('with dinner')) {
-          categorized.evening.push(simpleSupplement);
-          console.log(`🌙 Added ${ps.name} to evening`);
-        } else if (timing.includes('breakfast')) {
-          categorized.breakfast.push(simpleSupplement);
-          console.log(`🍳 Added ${ps.name} to breakfast`);
-        } else if (timing.includes('lunch')) {
-          categorized.lunch.push(simpleSupplement);
-          console.log(`🥗 Added ${ps.name} to lunch`);
-        } else if (timing.includes('dinner')) {
-          categorized.dinner.push(simpleSupplement);
-          console.log(`🍽️ Added ${ps.name} to dinner`);
-        } else if (timing.includes('post') || timing.includes('workout')) {
-          categorized.postWorkout.push(simpleSupplement);
-          console.log(`💪 Added ${ps.name} to post-workout`);
-        } else if (timing.includes('daily') || timing.includes('through food')) {
-          // Add to daily category
-          categorized.daily.push(simpleSupplement);
-          console.log(`📅 Added ${ps.name} to daily`);
-        } else {
-          // Default based on supplement category
-          if (supp.name && supp.name.toLowerCase().includes('energy')) {
-            categorized.morning.push(simpleSupplement);
-            console.log(`⚡ Added ${ps.name} to morning (energy supplement)`);
-          } else if (supp.name && (supp.name.toLowerCase().includes('sleep') || supp.name.toLowerCase().includes('recovery'))) {
-            categorized.evening.push(simpleSupplement);
-            console.log(`😴 Added ${ps.name} to evening (sleep/recovery supplement)`);
-          } else {
-            categorized.daily.push(simpleSupplement);
-            console.log(`📅 Added ${ps.name} to daily (default)`);
-          }
-        }
-      });
-    });
-    
-    console.log('🔍 categorizedSupplements result:', categorized);
-    return categorized;
-  }
-  
-  // Keep the old non-imported version for backward compatibility
-  function categorizeSupplementsOriginal(supplementsData) {
-    console.log('🔍 categorizeSupplements called with:', supplementsData);
-    if (!supplementsData || !supplementsData.supplements) {
-      console.log('❌ No supplements data or supplements array');
-      return null;
-    }
-    
-    console.log('🔍 Supplements array:', supplementsData.supplements);
-    console.log('🔍 Supplement tier:', supplementsData.tier);
-    
-    const categorized = {
-      breakfast: [],
-      lunch: [],
-      dinner: [],
-      snack: [],
-      postWorkout: [],
-      morning: [],
-      evening: [],
-      daily: []
-    };
-    
-    // Handle protein_only tier differently (food-based recommendations)
-    if (supplementsData.tier === 'protein_only' && false) { // Disabled - now we parse actual data
-      // Handle actual supplement tiers (essential_plus, full_stack, etc.)
-      supplementsData.supplements.forEach((supp, index) => {
-        console.log(`🔍 Processing supplement ${index}:`, supp);
-        const timing = supp.timing.toLowerCase();
-        console.log(`🔍 Timing: "${timing}"`);
-        
-        // Parse individual supplements from description
-        const items = [];
-        const parts = supp.description.split('+').map(s => s.trim());
-        console.log(`🔍 Split description parts:`, parts);
-        
-        parts.forEach(part => {
-          console.log(`🔍 Processing part: "${part}"`);
-          // More flexible regex that captures supplement name and amount with any trailing text
-          // This regex captures: name + dose amount + unit (mg, g, IU, etc.)
-          const match = part.match(/^([A-Za-z0-9\s-]+?)\s+(\d+(?:\.\d+)?\s*(?:mg|g|IU|mcg|[A-Z]*\s*CFU|ml|L))(?:\s|$)/i);
-          if (match) {
-            console.log(`✅ Matched: ${match[1]} - ${match[2]}`);
-            items.push({
-              name: match[1].trim(),
-              amount: match[2].trim(),
-              priority: supp.priority,
-              timing: timing,
-              fullDescription: part,
-              checked: false
-            });
-          } else {
-            // If no match, try to extract just the supplement name
-            console.log(`⚠️ No standard match for: "${part}", trying alternative parsing`);
-            
-            // Try to extract the first word(s) as the supplement name
-            const nameMatch = part.match(/^([A-Za-z0-9\s-]+?)(?:\s+\d+|$)/i);
-            if (nameMatch) {
-              items.push({
-                name: nameMatch[1].trim(),
-                amount: part.replace(nameMatch[1], '').trim() || 'As directed',
-                priority: supp.priority,
-                timing: timing,
-                fullDescription: part,
-                checked: false
-              });
-            } else {
-              // Last resort - use the full part
-              items.push({
-                name: part,
-                amount: 'As directed',
-                priority: supp.priority,
-                timing: timing,
-                fullDescription: part,
-                checked: false
-              });
-            }
-          }
-        });
-        
-        console.log(`🔍 Items for this supplement:`, items);
-        
-        // Categorize based on timing
-        if (timing.includes('with meal') || timing.includes('with main meal')) {
-          // Add to all main meals
-          categorized.breakfast.push(...items);
-          categorized.lunch.push(...items);
-          categorized.dinner.push(...items);
-          console.log(`📝 Added to main meals`);
-        } else if (timing.includes('morning') || timing.includes('before breakfast')) {
-          categorized.morning.push(...items);
-          console.log(`🌅 Added to morning`);
-        } else if (timing.includes('evening') || timing.includes('pm')) {
-          categorized.evening.push(...items);
-          console.log(`🌙 Added to evening`);
-        } else if ((timing.includes('pre') || timing.includes('post')) && timing.includes('workout')) {
-          categorized.postWorkout.push(...items);
-          console.log(`💪 Added to workout`);
-        } else if (timing.includes('daily')) {
-          categorized.daily.push(...items);
-          console.log(`📅 Added to daily`);
-        } else {
-          // Default to daily if no specific timing found
-          categorized.daily.push(...items);
-          console.log(`📅 Added to daily (default for timing: "${timing}")`);
-        }
-      });
-    }
-    
-    console.log('🔍 Final categorized result:', categorized);
-    return categorized;
-  }
-
-  // Generate different day types (simplified for now)
-  const trainingData = {
-    calories: targets.calories,
-    protein: `${targets.protein}g min`,
-    carbs: `${targets.hierarchical.carb_range.min}-${targets.hierarchical.carb_range.max}g`,
-    fats: `${targets.fat}g`,
-    water: "3.5L",
-    meals: formatMealData(transformedMeals, targets),
-    postWorkout: postWorkoutMeal,
-    coffee: coffeeData,
-    energyDrinks: energyDrinkData,
-    snacks: snacksData,
-    supplements: processedSupplementsData,
-    categorizedSupplements: categorizedSupplements,
-    supplementTier: processedSupplementsData?.tier || 'protein_only'
-  };
-  
-  console.log('📊 trainingData.supplements before JSON.stringify:', trainingData.supplements);
-  console.log('🔍 categorizedSupplements result:', categorizedSupplements);
-  console.log('🔍 processedSupplementsData:', processedSupplementsData);
-  
-  return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${userData.first_name}'s Interactive Meal Plan - Stephanie Sanzo Nutrition</title>
+    <title>Mike's Interactive Meal Plan - Stephanie Sanzo Nutrition</title>
     <style>
         * {
             margin: 0;
@@ -2804,7 +1972,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
 
         <div class="content-padding">
             <div class="sub-header">
-                <h2>Meal Plan for ${userData.first_name} ${userData.last_name || ''}</h2>
+                <h2>Meal Plan for Mike Thompson</h2>
                 <p class="creator">created by Stephanie Sanzo</p>
             </div>
             
@@ -2822,12 +1990,12 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     <div class="water-grid">
                         <div class="water-item">
                             <div class="water-title">Upon Waking</div>
-                            <div class="water-amount">${waterIntake.morningFormatted}</div>
+                            <div class="water-amount">27 oz</div>
                             <div class="water-timing">Drink before eating</div>
                         </div>
                         <div class="water-item">
                             <div class="water-title">Throughout Day</div>
-                            <div class="water-amount">${waterIntake.dailyFormatted}</div>
+                            <div class="water-amount">76 oz</div>
                             <div class="water-timing">Spread between meals</div>
                         </div>
                     </div>
@@ -2839,7 +2007,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     </div>
                     <div class="water-total">
                         <div class="water-total-text">
-                            TOTAL DAILY WATER INTAKE: <span style="color: #4A90E2;">${waterIntake.totalFormatted}</span>
+                            TOTAL DAILY WATER INTAKE: <span style="color: #4A90E2;">101 oz</span>
                         </div>
                         <div class="water-total-subtitle">
                             (not including coffees, teas, etc)
@@ -2849,63 +2017,79 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             </div>
             </div>
 
-            ${trainingAnalysis ? `
+            
             <div class="training-info-section" style="margin: 16px; background: #f8f9fa; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
                 <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #1a1a1a;">Your Training Schedule</h3>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px;">
                     <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: 700; color: #4A90E2;">${trainingAnalysis.totalTrainingDays}</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #4A90E2;">5</div>
                         <div style="font-size: 12px; color: #666;">Days/Week</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 600; color: #1a1a1a; text-transform: capitalize;">${trainingAnalysis.carbCyclingPattern}</div>
+                        <div style="font-size: 16px; font-weight: 600; color: #1a1a1a; text-transform: capitalize;">aggressive</div>
                         <div style="font-size: 12px; color: #666;">Carb Cycling</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 16px; font-weight: 600; color: #1a1a1a; text-transform: capitalize;">${trainingAnalysis.primaryTrainingDay}</div>
+                        <div style="font-size: 16px; font-weight: 600; color: #1a1a1a; text-transform: capitalize;">Tuesday</div>
                         <div style="font-size: 12px; color: #666;">Refeed Day</div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
-                    ${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                        const fullDay = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][index];
-                        const isLower = trainingAnalysis.lowerBodyDays.includes(fullDay);
-                        const isUpper = trainingAnalysis.upperBodyDays.includes(fullDay);
-                        const bgColor = isLower ? '#e3f2fd' : isUpper ? '#f3e5f5' : '#f5f5f5';
-                        const textColor = isLower ? '#1976d2' : isUpper ? '#7b1fa2' : '#757575';
-                        const label = isLower ? 'L' : isUpper ? 'U' : 'R';
-                        return `
-                        <div style="background: ${bgColor}; border-radius: 8px; padding: 8px 4px; text-align: center;">
-                            <div style="font-size: 11px; font-weight: 600; color: #666;">${day}</div>
-                            <div style="font-size: 14px; font-weight: 700; color: ${textColor}; margin-top: 2px;">${label}</div>
-                        </div>`;
-                    }).join('')}
+                    
+                        <div style="background: #f3e5f5; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Mon</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #7b1fa2; margin-top: 2px;">U</div>
+                        </div>
+                        <div style="background: #e3f2fd; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Tue</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #1976d2; margin-top: 2px;">L</div>
+                        </div>
+                        <div style="background: #f5f5f5; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Wed</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #757575; margin-top: 2px;">R</div>
+                        </div>
+                        <div style="background: #f3e5f5; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Thu</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #7b1fa2; margin-top: 2px;">U</div>
+                        </div>
+                        <div style="background: #e3f2fd; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Fri</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #1976d2; margin-top: 2px;">L</div>
+                        </div>
+                        <div style="background: #f3e5f5; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Sat</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #7b1fa2; margin-top: 2px;">U</div>
+                        </div>
+                        <div style="background: #f5f5f5; border-radius: 8px; padding: 8px 4px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 600; color: #666;">Sun</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #757575; margin-top: 2px;">R</div>
+                        </div>
                 </div>
                 <div style="margin-top: 12px; font-size: 11px; color: #666; text-align: center;">
                     L = Lower Body • U = Upper Body • R = Rest Day
                 </div>
             </div>
-            ` : ''}
             
-            ${cookingPreferences ? `
+            
+            
             <div class="cooking-info-section" style="margin: 16px; background: #fff3e0; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
                 <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #1a1a1a;">Meal Prep Preferences</h3>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
                     <div style="text-align: center;">
-                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">${cookingPreferences.morning.replace(' Options', '')}</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">Simple Meal Prep</div>
                         <div style="font-size: 11px; color: #666;">Morning</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">${cookingPreferences.midday.replace(' Options', '')}</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">Full Meal Prep</div>
                         <div style="font-size: 11px; color: #666;">Midday</div>
                     </div>
                     <div style="text-align: center;">
-                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">${cookingPreferences.night.replace(' Options', '')}</div>
+                        <div style="font-size: 13px; font-weight: 600; color: #e65100;">Full Meal Prep</div>
                         <div style="font-size: 11px; color: #666;">Evening</div>
                     </div>
                 </div>
             </div>
-            ` : ''}
+            
 
             <div class="morning-supplements-section" id="morningSupplementsContainer" style="margin: 0 16px 0 16px;">
                 <!-- Morning supplements will be inserted here -->
@@ -3004,12 +2188,12 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         const planId = window.location.pathname.split('/').pop().replace('.html', '');
         
         // Meal plan data from Module-58 (actual generated data)
-        console.log('Before stringify - trainingData has supplements:', !!${JSON.stringify(!!trainingData.supplements)});
-        console.log('Supplements data:', ${JSON.stringify(trainingData.supplements)});
+        console.log('Before stringify - trainingData has supplements:', !!false);
+        console.log('Supplements data:', null);
         const mealPlanData = {
-            training: ${JSON.stringify(trainingData)},
-            rest: ${JSON.stringify(trainingData)}, // Will be generated properly in future
-            refeed: ${JSON.stringify(trainingData)} // Will be generated properly in future
+            training: {"calories":2815,"protein":"185g min","carbs":"274-289g","fats":"105g","water":"3.5L","meals":[{"name":"Breakfast","calories":996,"foods":[],"supplements":[]},{"name":"Pre-Training Meal","calories":242,"foods":[],"supplements":[]},{"name":"Lunch","calories":305,"foods":[],"supplements":[]},{"name":"Snack","calories":468,"foods":[],"supplements":[]},{"name":"Dinner","calories":433,"foods":[],"supplements":[]}],"postWorkout":{"name":"Post-Workout Nutrition","calories":343,"timing":"Post-workout","notes":"Consume within 30 minutes after training","foods":[{"name":"Whey Protein Isolate","amount":"148g","macros":"37g P • 2g C • 1g F","calories":163,"protein":37,"carbs":1.5,"fats":0.7,"checked":false},{"name":"Dextrose","amount":"45g","macros":"0g P • 45g C • 0g F","calories":180,"protein":0,"carbs":45,"fats":0,"checked":false}],"supplements":[]},"coffee":null,"energyDrinks":null,"snacks":{"name":"Snacks & Drinks","calories":70,"timing":"Throughout day","notes":"Mix psyllium husk in a full glass of water and drink immediately - helps keep you regular!","foods":[{"name":"Psyllium Husk","amount":"7 tsp","macros":"0g P • 0g C • 0g F","calories":70,"protein":0,"carbs":0,"fats":0,"isDietDrink":false,"checked":false}]},"supplements":null,"categorizedSupplements":null,"supplementTier":"protein_only"},
+            rest: {"calories":2815,"protein":"185g min","carbs":"274-289g","fats":"105g","water":"3.5L","meals":[{"name":"Breakfast","calories":996,"foods":[],"supplements":[]},{"name":"Pre-Training Meal","calories":242,"foods":[],"supplements":[]},{"name":"Lunch","calories":305,"foods":[],"supplements":[]},{"name":"Snack","calories":468,"foods":[],"supplements":[]},{"name":"Dinner","calories":433,"foods":[],"supplements":[]}],"postWorkout":{"name":"Post-Workout Nutrition","calories":343,"timing":"Post-workout","notes":"Consume within 30 minutes after training","foods":[{"name":"Whey Protein Isolate","amount":"148g","macros":"37g P • 2g C • 1g F","calories":163,"protein":37,"carbs":1.5,"fats":0.7,"checked":false},{"name":"Dextrose","amount":"45g","macros":"0g P • 45g C • 0g F","calories":180,"protein":0,"carbs":45,"fats":0,"checked":false}],"supplements":[]},"coffee":null,"energyDrinks":null,"snacks":{"name":"Snacks & Drinks","calories":70,"timing":"Throughout day","notes":"Mix psyllium husk in a full glass of water and drink immediately - helps keep you regular!","foods":[{"name":"Psyllium Husk","amount":"7 tsp","macros":"0g P • 0g C • 0g F","calories":70,"protein":0,"carbs":0,"fats":0,"isDietDrink":false,"checked":false}]},"supplements":null,"categorizedSupplements":null,"supplementTier":"protein_only"}, // Will be generated properly in future
+            refeed: {"calories":2815,"protein":"185g min","carbs":"274-289g","fats":"105g","water":"3.5L","meals":[{"name":"Breakfast","calories":996,"foods":[],"supplements":[]},{"name":"Pre-Training Meal","calories":242,"foods":[],"supplements":[]},{"name":"Lunch","calories":305,"foods":[],"supplements":[]},{"name":"Snack","calories":468,"foods":[],"supplements":[]},{"name":"Dinner","calories":433,"foods":[],"supplements":[]}],"postWorkout":{"name":"Post-Workout Nutrition","calories":343,"timing":"Post-workout","notes":"Consume within 30 minutes after training","foods":[{"name":"Whey Protein Isolate","amount":"148g","macros":"37g P • 2g C • 1g F","calories":163,"protein":37,"carbs":1.5,"fats":0.7,"checked":false},{"name":"Dextrose","amount":"45g","macros":"0g P • 45g C • 0g F","calories":180,"protein":0,"carbs":45,"fats":0,"checked":false}],"supplements":[]},"coffee":null,"energyDrinks":null,"snacks":{"name":"Snacks & Drinks","calories":70,"timing":"Throughout day","notes":"Mix psyllium husk in a full glass of water and drink immediately - helps keep you regular!","foods":[{"name":"Psyllium Husk","amount":"7 tsp","macros":"0g P • 0g C • 0g F","calories":70,"protein":0,"carbs":0,"fats":0,"isDietDrink":false,"checked":false}]},"supplements":null,"categorizedSupplements":null,"supplementTier":"protein_only"} // Will be generated properly in future
         };
 
         // Current state
@@ -3086,11 +2270,11 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             progressData.currentDay = currentDay;
             
             // Save to local storage immediately
-            localStorage.setItem(\`mealPlan_\${planId}\`, JSON.stringify(progressData));
+            localStorage.setItem(`mealPlan_${planId}`, JSON.stringify(progressData));
             
             // Save to server in background (only if endpoint exists)
             try {
-                const response = await fetch(\`/api/progress/\${planId}\`, {
+                const response = await fetch(`/api/progress/${planId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(progressData)
@@ -3111,7 +2295,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         async function loadProgress() {
             try {
                 // Try server first
-                const response = await fetch(\`/api/progress/\${planId}\`);
+                const response = await fetch(`/api/progress/${planId}`);
                 const result = await response.json();
                 
                 if (result.success && result.data) {
@@ -3123,7 +2307,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     }
                     
                     // Update local storage with server data
-                    localStorage.setItem(\`mealPlan_\${planId}\`, JSON.stringify(progressData));
+                    localStorage.setItem(`mealPlan_${planId}`, JSON.stringify(progressData));
                 } else {
                     // Fallback to local storage
                     loadFromLocalStorage();
@@ -3136,7 +2320,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
 
         // Load from local storage
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem(\`mealPlan_\${planId}\`);
+            const saved = localStorage.getItem(`mealPlan_${planId}`);
             if (saved) {
                 progressData = JSON.parse(saved);
                 currentDay = progressData.currentDay || getTodaysDay().short;
@@ -3182,13 +2366,13 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             
             const dayNavFooter = document.getElementById('dayNavigationFooter');
             if (dayNavFooter) {
-                dayNavFooter.innerHTML = \`
+                dayNavFooter.innerHTML = `
                     <button class="nav-arrow" onclick="navigateDay(-1)">‹</button>
                     <div class="day-info">
-                        <span class="day-name">\${dayInfo.abbr} \${dateWithSuffix} \${monthName}</span> • <span class="day-type">\${dayTypeLabel}</span>
+                        <span class="day-name">${dayInfo.abbr} ${dateWithSuffix} ${monthName}</span> • <span class="day-type">${dayTypeLabel}</span>
                     </div>
                     <button class="nav-arrow" onclick="navigateDay(1)">›</button>
-                \`;
+                `;
             }
         }
 
@@ -3322,10 +2506,10 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 mealCard.className = 'meal-card';
                 mealCard.setAttribute('data-meal', mealIndex); // Add data attribute for swap
                 
-                mealCard.innerHTML = \`
+                mealCard.innerHTML = `
                     <div class="meal-header">
-                        <div class="meal-title">\${meal.name}</div>
-                        <div class="meal-checkbox \${meal.foods.every(food => food.checked) ? 'checked' : ''}" onclick="toggleAllFoodsInMeal(\${mealIndex})"></div>
+                        <div class="meal-title">${meal.name}</div>
+                        <div class="meal-checkbox ${meal.foods.every(food => food.checked) ? 'checked' : ''}" onclick="toggleAllFoodsInMeal(${mealIndex})"></div>
                     </div>
                     <div class="meal-table-header">
                         <div>Amount</div>
@@ -3338,52 +2522,52 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                         <div>✓</div>
                     </div>
                     <div class="meal-body">
-                        \${meal.foods.map((food, foodIndex) => \`
-                            <div class="food-item \${food.checked ? 'checked' : ''}">
+                        ${meal.foods.map((food, foodIndex) => `
+                            <div class="food-item ${food.checked ? 'checked' : ''}">
                                 <div class="food-item-main">
                                     <div class="food-info-group">
-                                        <div class="food-name">\${food.name}</div>
-                                        <div class="food-amount">\${food.amount}</div>
-                                        <div class="food-macros">\${formatMacrosWithColors(food.macros, food.calories)}</div>
+                                        <div class="food-name">${food.name}</div>
+                                        <div class="food-amount">${food.amount}</div>
+                                        <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
                                     </div>
-                                    <div class="food-amount desktop-only">\${food.amount}</div>
-                                    <div class="food-name desktop-only">\${food.name}</div>
-                                    <div class="macro-cell protein">\${Math.round(food.protein)}g</div>
-                                    <div class="macro-cell carbs">\${Math.round(food.carbs)}g</div>
-                                    <div class="macro-cell fat">\${Math.round(food.fats)}g</div>
-                                    <div class="macro-cell calories">\${Math.round(food.calories)}</div>
-                                    <button class="swap-button" onclick="toggleAlternatives(\${mealIndex}, \${foodIndex})" \${food.checked ? 'data-hidden="true"' : ''}>Swap</button>
-                                    <div class="check-button \${food.checked ? 'checked' : ''}" onclick="toggleFood(\${mealIndex}, \${foodIndex})">
+                                    <div class="food-amount desktop-only">${food.amount}</div>
+                                    <div class="food-name desktop-only">${food.name}</div>
+                                    <div class="macro-cell protein">${Math.round(food.protein)}g</div>
+                                    <div class="macro-cell carbs">${Math.round(food.carbs)}g</div>
+                                    <div class="macro-cell fat">${Math.round(food.fats)}g</div>
+                                    <div class="macro-cell calories">${Math.round(food.calories)}</div>
+                                    <button class="swap-button" onclick="toggleAlternatives(${mealIndex}, ${foodIndex})" ${food.checked ? 'data-hidden="true"' : ''}>Swap</button>
+                                    <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleFood(${mealIndex}, ${foodIndex})">
                                     </div>
                                 </div>
-                                <div class="food-alternatives" id="alternatives-\${mealIndex}-\${foodIndex}">
+                                <div class="food-alternatives" id="alternatives-${mealIndex}-${foodIndex}">
                                     <div class="alternatives-container"></div>
                                 </div>
                             </div>
-                        \`).join('')}
+                        `).join('')}
                     </div>
-                    \${meal.supplements && meal.supplements.length > 0 ? \`
+                    ${meal.supplements && meal.supplements.length > 0 ? `
                         <div class="meal-supplements">
-                            <div class="meal-supplements-header" onclick="toggleMealSupplements(\${mealIndex})">
+                            <div class="meal-supplements-header" onclick="toggleMealSupplements(${mealIndex})">
                                 <span class="meal-supplements-title">Supplements</span>
-                                <span class="meal-supplements-arrow" id="supplementsArrow-\${mealIndex}">›</span>
+                                <span class="meal-supplements-arrow" id="supplementsArrow-${mealIndex}">›</span>
                             </div>
-                            <div class="meal-supplements-content" id="supplementsContent-\${mealIndex}">
-                                \${meal.supplements.map((supp, suppIndex) => \`
+                            <div class="meal-supplements-content" id="supplementsContent-${mealIndex}">
+                                ${meal.supplements.map((supp, suppIndex) => `
                                     <div class="supplement-item">
                                         <div class="supplement-info">
-                                            <div class="supplement-name">\${supp.name}</div>
-                                            <div class="supplement-amount">\${supp.amount}</div>
-                                            <div class="supplement-priority \${supp.priority.toLowerCase()}">\${supp.priority}</div>
+                                            <div class="supplement-name">${supp.name}</div>
+                                            <div class="supplement-amount">${supp.amount}</div>
+                                            <div class="supplement-priority ${supp.priority.toLowerCase()}">${supp.priority}</div>
                                         </div>
-                                        <div class="check-button" onclick="toggleSupplement(\${mealIndex}, \${suppIndex})" id="supplement-\${mealIndex}-\${suppIndex}">
+                                        <div class="check-button" onclick="toggleSupplement(${mealIndex}, ${suppIndex})" id="supplement-${mealIndex}-${suppIndex}">
                                         </div>
                                     </div>
-                                \`).join('')}
+                                `).join('')}
                             </div>
                         </div>
-                    \` : ''}
-                \`;
+                    ` : ''}
+                `;
                 
                 container.appendChild(mealCard);
             });
@@ -3404,51 +2588,51 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             container.style.display = 'block';
-            container.innerHTML = \`
+            container.innerHTML = `
                 <div class="meal-card">
                     <div class="meal-header">
-                        <div class="meal-title">\${postWorkout.name}</div>
-                        <div class="meal-checkbox \${postWorkout.foods.every(food => food.checked) ? 'checked' : ''}" onclick="toggleAllPostWorkoutFoods()"></div>
+                        <div class="meal-title">${postWorkout.name}</div>
+                        <div class="meal-checkbox ${postWorkout.foods.every(food => food.checked) ? 'checked' : ''}" onclick="toggleAllPostWorkoutFoods()"></div>
                     </div>
                     <div class="meal-timing">Within 30 mins after training</div>
                     <div class="meal-body">
-                        \${postWorkout.foods.map((food, foodIndex) => \`
-                            <div class="food-item \${food.checked ? 'checked' : ''}">
+                        ${postWorkout.foods.map((food, foodIndex) => `
+                            <div class="food-item ${food.checked ? 'checked' : ''}">
                                 <div class="food-item-main">
                                     <div class="food-info">
-                                        <div class="food-name">\${food.name}</div>
-                                        <div class="food-amount">\${food.amount}</div>
-                                        <div class="food-macros">\${formatMacrosWithColors(food.macros, food.calories)}</div>
+                                        <div class="food-name">${food.name}</div>
+                                        <div class="food-amount">${food.amount}</div>
+                                        <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
                                     </div>
-                                    <div class="check-button \${food.checked ? 'checked' : ''}" onclick="togglePostWorkoutFood(\${foodIndex})">
+                                    <div class="check-button ${food.checked ? 'checked' : ''}" onclick="togglePostWorkoutFood(${foodIndex})">
                                     </div>
                                 </div>
                             </div>
-                        \`).join('')}
+                        `).join('')}
                     </div>
-                    \${postWorkout.supplements && postWorkout.supplements.length > 0 ? \`
+                    ${postWorkout.supplements && postWorkout.supplements.length > 0 ? `
                         <div class="meal-supplements">
                             <div class="meal-supplements-header" onclick="togglePostWorkoutSupplements()">
                                 <span class="meal-supplements-title">Supplements</span>
                                 <span class="meal-supplements-arrow" id="postWorkoutSupplementsArrow">›</span>
                             </div>
                             <div class="meal-supplements-content" id="postWorkoutSupplementsContent">
-                                \${postWorkout.supplements.map((supp, suppIndex) => \`
+                                ${postWorkout.supplements.map((supp, suppIndex) => `
                                     <div class="supplement-item">
                                         <div class="supplement-info">
-                                            <div class="supplement-name">\${supp.name}</div>
-                                            <div class="supplement-amount">\${supp.amount}</div>
-                                            <div class="supplement-priority \${supp.priority.toLowerCase()}">\${supp.priority}</div>
+                                            <div class="supplement-name">${supp.name}</div>
+                                            <div class="supplement-amount">${supp.amount}</div>
+                                            <div class="supplement-priority ${supp.priority.toLowerCase()}">${supp.priority}</div>
                                         </div>
-                                        <div class="check-button" onclick="togglePostWorkoutSupplement(\${suppIndex})" id="postworkout-supplement-\${suppIndex}">
+                                        <div class="check-button" onclick="togglePostWorkoutSupplement(${suppIndex})" id="postworkout-supplement-${suppIndex}">
                                         </div>
                                     </div>
-                                \`).join('')}
+                                `).join('')}
                             </div>
                         </div>
-                    \` : ''}
+                    ` : ''}
                 </div>
-            \`;
+            `;
         }
 
         window.toggleAlternatives = function(mealIndex, foodIndex) {
@@ -3491,7 +2675,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 }
                 
                 // Filter alternatives
-                const userPrefs = ${JSON.stringify(userData.dietary_preferences || {})};
+                const userPrefs = {};
                 console.log('User preferences:', userPrefs);
                 
                 const alternatives = foodDatabaseData.filter(alt => {
@@ -3520,12 +2704,12 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                         console.log('Creating alternative card for:', alt.name);
                         const card = document.createElement('div');
                         card.className = 'alternative-card';
-                        card.innerHTML = \`
-                            <div class="alternative-name">\${alt.name}</div>
+                        card.innerHTML = `
+                            <div class="alternative-name">${alt.name}</div>
                             <div class="alternative-macros">
-                                \${formatAlternativeMacrosWithColors(Math.round(alt.protein) + 'g P • ' + Math.round(alt.carbs) + 'g C • ' + Math.round(alt.fat) + 'g F')} • (100g)
+                                ${formatAlternativeMacrosWithColors(Math.round(alt.protein) + 'g P • ' + Math.round(alt.carbs) + 'g C • ' + Math.round(alt.fat) + 'g F')} • (100g)
                             </div>
-                        \`;
+                        `;
                         
                         card.onclick = function() {
                             console.log('Alternative clicked:', alt.name);
@@ -3640,7 +2824,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             food.checked = !food.checked;
             
             // Save checked state
-            const key = \`\${currentDay}_\${currentDayType}_\${mealIndex}_\${foodIndex}\`;
+            const key = `${currentDay}_${currentDayType}_${mealIndex}_${foodIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = food.checked;
             
@@ -3649,7 +2833,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             
             // Add success feedback animation if checked
             if (food.checked) {
-                const checkbox = document.getElementById(\`checkbox-\${mealIndex}-\${foodIndex}\`);
+                const checkbox = document.getElementById(`checkbox-${mealIndex}-${foodIndex}`);
                 if (checkbox) {
                     checkbox.classList.add('success-feedback');
                     setTimeout(() => checkbox.classList.remove('success-feedback'), 400);
@@ -3664,8 +2848,8 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         
         // Toggle functions for supplements
         window.toggleMealSupplements = function(mealIndex) {
-            const content = document.getElementById(\`supplementsContent-\${mealIndex}\`);
-            const arrow = document.getElementById(\`supplementsArrow-\${mealIndex}\`);
+            const content = document.getElementById(`supplementsContent-${mealIndex}`);
+            const arrow = document.getElementById(`supplementsArrow-${mealIndex}`);
             
             if (content.classList.contains('expanded')) {
                 content.classList.remove('expanded');
@@ -3692,7 +2876,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         window.toggleSupplement = function(mealIndex, suppIndex) {
             const data = mealPlanData[currentDayType];
             const supplement = data.meals[mealIndex].supplements[suppIndex];
-            const checkbox = document.getElementById(\`supplement-\${mealIndex}-\${suppIndex}\`);
+            const checkbox = document.getElementById(`supplement-${mealIndex}-${suppIndex}`);
             
             // Toggle checked state
             supplement.checked = !supplement.checked;
@@ -3705,7 +2889,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             // Save state
-            const key = \`supplement_\${currentDay}_\${currentDayType}_\${mealIndex}_\${suppIndex}\`;
+            const key = `supplement_${currentDay}_${currentDayType}_${mealIndex}_${suppIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = supplement.checked;
             
@@ -3716,7 +2900,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         window.togglePostWorkoutSupplement = function(suppIndex) {
             const data = mealPlanData[currentDayType];
             const supplement = data.postWorkout.supplements[suppIndex];
-            const checkbox = document.getElementById(\`postworkout-supplement-\${suppIndex}\`);
+            const checkbox = document.getElementById(`postworkout-supplement-${suppIndex}`);
             
             // Toggle checked state
             supplement.checked = !supplement.checked;
@@ -3729,7 +2913,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             // Save state
-            const key = \`supplement_\${currentDay}_\${currentDayType}_postworkout_\${suppIndex}\`;
+            const key = `supplement_${currentDay}_${currentDayType}_postworkout_${suppIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = supplement.checked;
             
@@ -3773,7 +2957,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 supplement.checked = false;
             }
             
-            const checkbox = document.getElementById(\`\${type}-supplement-\${suppIndex}\`);
+            const checkbox = document.getElementById(`${type}-supplement-${suppIndex}`);
             
             // Toggle checked state
             supplement.checked = !supplement.checked;
@@ -3789,7 +2973,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             // Save state
-            const key = \`supplement_\${currentDay}_\${currentDayType}_\${type}_\${suppIndex}\`;
+            const key = `supplement_${currentDay}_${currentDayType}_${type}_${suppIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = supplement.checked;
             
@@ -3807,7 +2991,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 food.checked = !allChecked;
                 
                 // Save checked state
-                const key = \`\${currentDay}_\${currentDayType}_\${mealIndex}_\${foodIndex}\`;
+                const key = `${currentDay}_${currentDayType}_${mealIndex}_${foodIndex}`;
                 if (!progressData.checkedItems) progressData.checkedItems = {};
                 progressData.checkedItems[key] = food.checked;
             });
@@ -3825,7 +3009,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             food.checked = !food.checked;
             
             // Save checked state
-            const key = \`\${currentDay}_\${currentDayType}_postworkout_\${foodIndex}\`;
+            const key = `${currentDay}_${currentDayType}_postworkout_${foodIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = food.checked;
             
@@ -3863,43 +3047,43 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             if (hasCoffee && coffee) totalDrinkCalories += coffee.calories || 0;
             if (hasEnergyDrinks && energyDrinks) totalDrinkCalories += energyDrinks.calories || 0;
             
-            container.innerHTML = \`
+            container.innerHTML = `
                 <div class="meal-card">
                     <div class="meal-header">
                         <div class="meal-title">Drinks</div>
-                        <div class="meal-checkbox \${getAllDrinksChecked(coffee, energyDrinks) ? 'checked' : ''}" onclick="toggleAllDrinks()"></div>
+                        <div class="meal-checkbox ${getAllDrinksChecked(coffee, energyDrinks) ? 'checked' : ''}" onclick="toggleAllDrinks()"></div>
                     </div>
                     <div class="meal-timing">Have any time throughout the day</div>
                     <div class="meal-body">
-                        \${hasCoffee ? coffee.foods.map((food, foodIndex) => \`
+                        ${hasCoffee ? coffee.foods.map((food, foodIndex) => `
                             <div class="food-item">
                                 <div class="food-item-main">
                                     <div class="food-info">
-                                        <div class="food-name">\${food.name}</div>
-                                        <div class="food-amount">\${food.amount}</div>
-                                        <div class="food-macros">\${formatMacrosWithColors(food.macros, food.calories)}</div>
+                                        <div class="food-name">${food.name}</div>
+                                        <div class="food-amount">${food.amount}</div>
+                                        <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
                                     </div>
-                                    <div class="check-button \${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('coffee', \${foodIndex})">
+                                    <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('coffee', ${foodIndex})">
                                     </div>
                                 </div>
                             </div>
-                        \`).join('') : ''}
-                        \${hasEnergyDrinks ? energyDrinks.foods.map((food, foodIndex) => \`
+                        `).join('') : ''}
+                        ${hasEnergyDrinks ? energyDrinks.foods.map((food, foodIndex) => `
                             <div class="food-item">
                                 <div class="food-item-main">
                                     <div class="food-info">
-                                        <div class="food-name">\${food.name}</div>
-                                        <div class="food-amount">\${food.amount}</div>
-                                        <div class="food-macros">\${formatMacrosWithColors(food.macros, food.calories)}</div>
+                                        <div class="food-name">${food.name}</div>
+                                        <div class="food-amount">${food.amount}</div>
+                                        <div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>
                                     </div>
-                                    <div class="check-button \${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('energy', \${foodIndex})">
+                                    <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleDrinkFood('energy', ${foodIndex})">
                                     </div>
                                 </div>
                             </div>
-                        \`).join('') : ''}
+                        `).join('') : ''}
                     </div>
                 </div>
-            \`;
+            `;
         }
 
         function toggleDrinkFood(drinkType, foodIndex) {
@@ -3911,7 +3095,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             food.checked = !food.checked;
             
             // Save checked state
-            const key = \`\${currentDay}_\${currentDayType}_\${drinkType}_\${foodIndex}\`;
+            const key = `${currentDay}_${currentDayType}_${drinkType}_${foodIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = food.checked;
             
@@ -3931,7 +3115,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 food.checked = !allChecked;
                 
                 // Save checked state
-                const key = \`\${currentDay}_\${currentDayType}_postworkout_\${foodIndex}\`;
+                const key = `${currentDay}_${currentDayType}_postworkout_${foodIndex}`;
                 if (!progressData.checkedItems) progressData.checkedItems = {};
                 progressData.checkedItems[key] = food.checked;
             });
@@ -3962,7 +3146,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     food.checked = !allChecked;
                     
                     // Save checked state
-                    const key = \`\${currentDay}_\${currentDayType}_coffee_\${foodIndex}\`;
+                    const key = `${currentDay}_${currentDayType}_coffee_${foodIndex}`;
                     if (!progressData.checkedItems) progressData.checkedItems = {};
                     progressData.checkedItems[key] = food.checked;
                 });
@@ -3973,7 +3157,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     food.checked = !allChecked;
                     
                     // Save checked state
-                    const key = \`\${currentDay}_\${currentDayType}_energy_\${foodIndex}\`;
+                    const key = `${currentDay}_${currentDayType}_energy_${foodIndex}`;
                     if (!progressData.checkedItems) progressData.checkedItems = {};
                     progressData.checkedItems[key] = food.checked;
                 });
@@ -3985,16 +3169,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         }
 
         // Food database data embedded
-        const foodDatabaseData = ${JSON.stringify(foodDatabase.foods.map(f => ({
-            name: f.name,
-            calories: f.calories,
-            protein: f.protein,
-            carbs: f.carbs,
-            fat: f.fat,
-            foodType: f.foodType,
-            dietaryCategory: f.dietaryCategory,
-            dietaryRestrictions: f.dietaryRestrictions
-        })))};
+        const foodDatabaseData = [{"name":"Chicken Thigh","calories":209,"protein":26,"carbs":0,"fat":10.9,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Turkey Breast","calories":147,"protein":30,"carbs":0,"fat":2.1,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Turkey Mince (93/7)","calories":161,"protein":28,"carbs":0,"fat":8,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lean Beef Mince (5%)","calories":180,"protein":28,"carbs":0,"fat":6,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Eye Fillet Steak","calories":250,"protein":31,"carbs":0,"fat":12,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sirloin Steak","calories":195,"protein":29.8,"carbs":0,"fat":8.5,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Salmon Fillet","calories":206,"protein":25,"carbs":0,"fat":11,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tuna (Canned in Water)","calories":116,"protein":25.5,"carbs":0,"fat":0.8,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"White Fish (Barramundi)","calories":115,"protein":23,"carbs":0,"fat":2.3,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Prawns","calories":99,"protein":24,"carbs":0,"fat":0.3,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":false}},{"name":"Eggs (Large)","calories":70,"protein":6,"carbs":0.5,"fat":5,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Egg Whites","calories":52,"protein":11,"carbs":0.7,"fat":0.2,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Greek Yogurt (Non-fat)","calories":59,"protein":10,"carbs":3.6,"fat":0.4,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Greek Yogurt (2% fat)","calories":100,"protein":15,"carbs":6,"fat":2.5,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cottage Cheese (Low-fat)","calories":72,"protein":12,"carbs":3.4,"fat":1,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tofu (Firm)","calories":144,"protein":15.5,"carbs":3.5,"fat":8.7,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Tempeh","calories":192,"protein":19,"carbs":9,"fat":11,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Kangaroo Fillet","calories":140,"protein":32,"carbs":0,"fat":2,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Smoked Salmon","calories":117,"protein":18,"carbs":0,"fat":4.3,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Canned Chicken","calories":165,"protein":31,"carbs":0,"fat":3.5,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ricotta Cheese (Part Skim)","calories":138,"protein":11,"carbs":3,"fat":8,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"String Cheese (Mozzarella)","calories":80,"protein":7,"carbs":1,"fat":6,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Beyond Meat (Ground)","calories":230,"protein":20,"carbs":5,"fat":14,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Impossible Meat (Ground)","calories":240,"protein":19,"carbs":9,"fat":14,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tofu (Silken)","calories":55,"protein":4.8,"carbs":2.9,"fat":2.7,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Tofu (Extra Firm)","calories":91,"protein":9.9,"carbs":2,"fat":4.7,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Seitan","calories":370,"protein":75,"carbs":14,"fat":1.9,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Nutritional Yeast","calories":60,"protein":8,"carbs":5,"fat":0.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Oat Milk","calories":120,"protein":3,"carbs":16,"fat":5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Soy Milk","calories":80,"protein":7,"carbs":4,"fat":4,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Cashew Milk","calories":25,"protein":1,"carbs":1,"fat":2,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"TVP (Textured Vegetable Protein)","calories":345,"protein":50,"carbs":35,"fat":1.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vegan Fish (Plant-Based)","calories":180,"protein":12,"carbs":8,"fat":11,"foodType":"mixed","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Duck Breast","calories":201,"protein":23,"carbs":0,"fat":11,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lamb Chops","calories":294,"protein":25,"carbs":0,"fat":21,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Scallops","calories":111,"protein":20,"carbs":5,"fat":0.8,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":false}},{"name":"Bison (Ground)","calories":223,"protein":31,"carbs":0,"fat":10,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Venison","calories":158,"protein":30,"carbs":0,"fat":3.2,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mussels","calories":172,"protein":24,"carbs":7,"fat":4.5,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":false}},{"name":"Lobster","calories":89,"protein":19,"carbs":0,"fat":0.9,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":false}},{"name":"Liver (Chicken)","calories":167,"protein":24.5,"carbs":0.9,"fat":6.5,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chicken Mince","calories":180,"protein":28,"carbs":0,"fat":7,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"High Protein Bread","calories":100,"protein":10,"carbs":12,"fat":1.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"White Rice","calories":130,"protein":2.7,"carbs":28,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Brown Rice","calories":112,"protein":2.6,"carbs":24,"fat":0.9,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sweet Potato","calories":90,"protein":2,"carbs":21,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"White Potato","calories":87,"protein":1.9,"carbs":20,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Oats (Rolled)","calories":71,"protein":2.5,"carbs":12,"fat":1.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Quinoa","calories":120,"protein":4.4,"carbs":21,"fat":1.9,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pasta (Whole Wheat)","calories":124,"protein":5.3,"carbs":27,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Couscous","calories":112,"protein":3.8,"carbs":23,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ezekiel Bread","calories":80,"protein":4,"carbs":15,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Whole Wheat Bread","calories":69,"protein":3.6,"carbs":12,"fat":0.9,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sourdough Bread","calories":82,"protein":3,"carbs":16,"fat":0.9,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"White Bread","calories":67,"protein":2,"carbs":13,"fat":0.8,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rice Cakes (Plain)","calories":35,"protein":0.9,"carbs":7.3,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Corn Tortillas","calories":52,"protein":1.4,"carbs":11,"fat":0.6,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Bagel (Plain)","calories":245,"protein":10,"carbs":48,"fat":1.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"English Muffin","calories":134,"protein":4.4,"carbs":27,"fat":1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Granola","calories":298,"protein":6,"carbs":40,"fat":14,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Quinoa Pasta","calories":148,"protein":5,"carbs":30,"fat":1.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Shirataki Noodles","calories":10,"protein":0,"carbs":3,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Quick Oats","calories":68,"protein":2.4,"carbs":11.7,"fat":1.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rye Bread","calories":83,"protein":2.7,"carbs":15.5,"fat":1.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Gluten Free Wraps","calories":130,"protein":2,"carbs":28,"fat":2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Gluten Free Bread","calories":90,"protein":1,"carbs":19,"fat":1.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Broccoli","calories":35,"protein":2.4,"carbs":7.2,"fat":0.4,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Spinach","calories":23,"protein":2.9,"carbs":3.8,"fat":0.3,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Asparagus","calories":22,"protein":2.4,"carbs":4,"fat":0.2,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Green Beans","calories":35,"protein":1.9,"carbs":8,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Brussels Sprouts","calories":36,"protein":2.6,"carbs":7.1,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cauliflower","calories":23,"protein":1.8,"carbs":4.1,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Zucchini","calories":17,"protein":1.1,"carbs":2.7,"fat":0.4,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Bell Peppers (Red)","calories":28,"protein":0.9,"carbs":5.5,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mushrooms (White)","calories":28,"protein":2.2,"carbs":5.3,"fat":0.5,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Carrots","calories":35,"protein":0.8,"carbs":8.2,"fat":0.2,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cucumber","calories":16,"protein":0.7,"carbs":3.6,"fat":0.1,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lettuce (Cos/Romaine)","calories":17,"protein":1.2,"carbs":3.3,"fat":0.3,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tomatoes","calories":18,"protein":0.9,"carbs":3.9,"fat":0.2,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Kale","calories":28,"protein":1.9,"carbs":5.6,"fat":0.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Beetroot","calories":44,"protein":1.7,"carbs":10,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pumpkin","calories":20,"protein":0.7,"carbs":4.9,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Onions","calories":44,"protein":1.4,"carbs":10.1,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Garlic","calories":149,"protein":6.4,"carbs":33,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Celery","calories":16,"protein":0.7,"carbs":3,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Broccolini","calories":35,"protein":2.8,"carbs":6,"fat":0.4,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Snow Peas","calories":42,"protein":2.8,"carbs":7.4,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Peas (Green)","calories":84,"protein":5.4,"carbs":16,"fat":0.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Parsnips","calories":71,"protein":1.3,"carbs":17,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Eggplant","calories":35,"protein":0.8,"carbs":8.7,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Rocket (Arugula)","calories":25,"protein":2.6,"carbs":3.7,"fat":0.7,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Apple","calories":52,"protein":0.3,"carbs":14,"fat":0.2,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Banana","calories":89,"protein":1.1,"carbs":23,"fat":0.3,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Blueberries","calories":57,"protein":0.7,"carbs":14,"fat":0.3,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Strawberries","calories":32,"protein":0.7,"carbs":7.7,"fat":0.3,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Orange","calories":47,"protein":0.9,"carbs":12,"fat":0.1,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Grapes (Red)","calories":69,"protein":0.7,"carbs":18,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Watermelon","calories":30,"protein":0.6,"carbs":8,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pineapple","calories":50,"protein":0.5,"carbs":13,"fat":0.1,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mango","calories":60,"protein":0.8,"carbs":15,"fat":0.4,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pear","calories":57,"protein":0.4,"carbs":15,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Kiwi","calories":61,"protein":1.1,"carbs":15,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Raspberries","calories":52,"protein":1.2,"carbs":12,"fat":0.7,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Dates (Medjool)","calories":66,"protein":0.4,"carbs":18,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Raisins","calories":129,"protein":1.3,"carbs":34,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mandarin","calories":53,"protein":0.8,"carbs":13.3,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Peach","calories":39,"protein":0.9,"carbs":9.5,"fat":0.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rockmelon (Cantaloupe)","calories":34,"protein":0.8,"carbs":8.2,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Avocado","calories":160,"protein":2,"carbs":8.5,"fat":14.7,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Olive Oil (Extra Virgin)","calories":119,"protein":0,"carbs":0,"fat":13.5,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Coconut Oil","calories":117,"protein":0,"carbs":0,"fat":13.5,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Almonds","calories":161,"protein":6,"carbs":6,"fat":14,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Walnuts","calories":183,"protein":4.3,"carbs":3.8,"fat":18.3,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Peanut Butter (Natural)","calories":188,"protein":8,"carbs":8,"fat":16,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Almond Butter","calories":196,"protein":7,"carbs":6,"fat":18,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cashew Butter","calories":188,"protein":5.6,"carbs":9,"fat":15.5,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sunflower Seed Butter","calories":185,"protein":5.5,"carbs":7.8,"fat":16,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chia Seeds","calories":138,"protein":4.7,"carbs":12,"fat":8.7,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Flaxseeds (Ground)","calories":55,"protein":1.9,"carbs":3,"fat":4.3,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tahini","calories":178,"protein":5.3,"carbs":6.4,"fat":16.1,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"MCT Oil","calories":117,"protein":0,"carbs":0,"fat":13,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Butter","calories":100,"protein":0.1,"carbs":0,"fat":11.3,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cheese (Cheddar)","calories":113,"protein":7,"carbs":0.4,"fat":9.3,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pumpkin Seeds","calories":151,"protein":7,"carbs":5,"fat":13,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sunflower Seeds","calories":163,"protein":5.8,"carbs":5.7,"fat":14,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Avocado Oil","calories":124,"protein":0,"carbs":0,"fat":14,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sesame Oil","calories":120,"protein":0,"carbs":0,"fat":13.6,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Grapeseed Oil","calories":120,"protein":0,"carbs":0,"fat":13.6,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Walnut Oil","calories":120,"protein":0,"carbs":0,"fat":13.6,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Hemp Seeds","calories":166,"protein":9.5,"carbs":2.6,"fat":14.6,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Macadamia Nuts","calories":204,"protein":2.2,"carbs":3.9,"fat":21.5,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cashews","calories":157,"protein":5.2,"carbs":8.6,"fat":12.4,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Brazil Nuts","calories":186,"protein":4,"carbs":3.5,"fat":19,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pecans","calories":196,"protein":2.6,"carbs":3.9,"fat":20.4,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ghee","calories":112,"protein":0,"carbs":0,"fat":12.7,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Whey Protein Isolate","calories":110,"protein":25,"carbs":1,"fat":0.5,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Plant Protein Powder","calories":120,"protein":21,"carbs":4,"fat":2,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Hemp Protein Powder","calories":116,"protein":15,"carbs":8,"fat":3,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pea Protein Isolate","calories":105,"protein":23,"carbs":2,"fat":0.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Egg White Protein Powder","calories":105,"protein":24,"carbs":2,"fat":0,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Collagen Peptides","calories":72,"protein":18,"carbs":0,"fat":0,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Black Beans","calories":132,"protein":8.9,"carbs":24,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chickpeas","calories":164,"protein":8.9,"carbs":27,"fat":2.6,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lentils (Red)","calories":116,"protein":9,"carbs":20,"fat":0.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Edamame","calories":121,"protein":11.9,"carbs":8.9,"fat":5.2,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chickpea Flour","calories":387,"protein":22,"carbs":58,"fat":7,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vital Wheat Gluten","calories":370,"protein":75,"carbs":14,"fat":1.9,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Kidney Beans","calories":127,"protein":8.7,"carbs":23,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cannellini Beans","calories":139,"protein":9.7,"carbs":25,"fat":0.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pinto Beans","calories":143,"protein":9,"carbs":26,"fat":0.7,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Coffee (Black)","calories":2,"protein":0.3,"carbs":0,"fat":0,"foodType":"drink","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Green Tea","calories":2,"protein":0.5,"carbs":0,"fat":0,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Orange Juice","calories":112,"protein":1.7,"carbs":26,"fat":0.5,"foodType":"drink","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Almond Milk (Unsweetened)","calories":30,"protein":1,"carbs":1,"fat":2.5,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Milk (2%)","calories":122,"protein":8,"carbs":12,"fat":5,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Milk (Whole)","calories":150,"protein":8,"carbs":12,"fat":8,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Milk (Skim)","calories":83,"protein":8,"carbs":12,"fat":0.2,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Coconut Water","calories":45,"protein":1.7,"carbs":8.9,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sports Drink (Regular)","calories":50,"protein":0,"carbs":14,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Wine (Red)","calories":125,"protein":0.1,"carbs":3.8,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Beer (Light)","calories":103,"protein":0.9,"carbs":5.8,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Bone Broth","calories":40,"protein":9,"carbs":0,"fat":0.5,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vegetable Broth","calories":13,"protein":0.5,"carbs":2.5,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Soy Sauce (Reduced Sodium)","calories":10,"protein":1,"carbs":1,"fat":0,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":false,"isEggFree":true,"isShellfishFree":true}},{"name":"Balsamic Vinegar","calories":14,"protein":0,"carbs":3,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Hot Sauce (Sriracha)","calories":5,"protein":0.1,"carbs":1,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tomato Sauce (No Sugar)","calories":35,"protein":1.5,"carbs":6,"fat":0.5,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tzatziki","calories":30,"protein":2,"carbs":2,"fat":2,"foodType":"mixed","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Hummus","calories":70,"protein":2,"carbs":6,"fat":4.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pesto (Basil)","calories":80,"protein":1.5,"carbs":1,"fat":8,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"BBQ Sauce (Sugar Free)","calories":10,"protein":0,"carbs":2,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mustard (Dijon)","calories":5,"protein":0.3,"carbs":0.3,"fat":0.3,"foodType":"mixed","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Salsa (Fresh)","calories":10,"protein":0.5,"carbs":2,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mayonnaise","calories":94,"protein":0.1,"carbs":0.1,"fat":10.3,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mayonnaise (Light)","calories":35,"protein":0,"carbs":1,"fat":3.5,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ketchup","calories":19,"protein":0.3,"carbs":4.7,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Honey","calories":64,"protein":0.1,"carbs":17,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ranch Dressing","calories":145,"protein":0.3,"carbs":1.4,"fat":15.3,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Caesar Dressing","calories":155,"protein":1.2,"carbs":1,"fat":16.5,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vegemite","calories":11,"protein":1.3,"carbs":1.2,"fat":0,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Maple Syrup","calories":52,"protein":0,"carbs":13.4,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Teriyaki Sauce","calories":16,"protein":1.1,"carbs":2.8,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Protein Bar (Quest)","calories":190,"protein":21,"carbs":4,"fat":8,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Popcorn (Air-popped)","calories":31,"protein":1,"carbs":6.2,"fat":0.4,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Beef Jerky","calories":116,"protein":9.4,"carbs":3.1,"fat":7.3,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Dark Chocolate (70%)","calories":170,"protein":2.2,"carbs":13,"fat":12,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tim Tams","calories":95,"protein":0.9,"carbs":11.5,"fat":5,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Crackers (Water)","calories":66,"protein":1.5,"carbs":11,"fat":1.8,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pretzels","calories":108,"protein":2.9,"carbs":23,"fat":0.9,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Trail Mix","calories":131,"protein":4,"carbs":13,"fat":8.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rice Crackers (Flavored)","calories":110,"protein":2,"carbs":24,"fat":1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Protein Chips","calories":140,"protein":12,"carbs":5,"fat":8,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Veggie Straws","calories":130,"protein":0.5,"carbs":19,"fat":6,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Granola Bar (Chewy)","calories":96,"protein":1.3,"carbs":18,"fat":2.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Fruit Leather","calories":60,"protein":0,"carbs":16,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Dried Mango","calories":128,"protein":0.8,"carbs":32,"fat":0.5,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Yogurt Raisins","calories":124,"protein":1.2,"carbs":22,"fat":4.2,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Seaweed Snacks","calories":20,"protein":1.5,"carbs":1,"fat":2,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Energy Balls (Date-Nut)","calories":95,"protein":2.5,"carbs":12,"fat":4.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cheese Cubes (Cheddar)","calories":120,"protein":7.5,"carbs":0.5,"fat":10,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pita Chips","calories":130,"protein":3,"carbs":19,"fat":4.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chocolate Almonds","calories":153,"protein":3.5,"carbs":14,"fat":10.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mini Muffin (Blueberry)","calories":90,"protein":1.5,"carbs":14,"fat":3.5,"foodType":"fruit","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Anzac Biscuits","calories":110,"protein":1.5,"carbs":14,"fat":5.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lamingtons","calories":180,"protein":2,"carbs":26,"fat":8,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Corn Chips","calories":140,"protein":2,"carbs":18,"fat":7,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cookies (Choc Chip)","calories":160,"protein":2,"carbs":21,"fat":8,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Mixed Nuts (Salted)","calories":168,"protein":5,"carbs":7,"fat":15,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Apple Chips","calories":80,"protein":0,"carbs":19,"fat":0,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Banana Chips","calories":147,"protein":0.6,"carbs":17,"fat":9.5,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cheese Crackers","calories":139,"protein":3,"carbs":19,"fat":6,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Edamame (Dry Roasted)","calories":130,"protein":14,"carbs":9,"fat":4,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Greek Yogurt Parfait","calories":180,"protein":12,"carbs":25,"fat":4,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Nut Bar (Kind Bar)","calories":200,"protein":6,"carbs":16,"fat":15,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cottage Cheese Bowl","calories":115,"protein":14,"carbs":8,"fat":3,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Protein Pudding","calories":130,"protein":20,"carbs":8,"fat":3,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sugar-Free Jello","calories":10,"protein":1,"carbs":0,"fat":0,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pickles","calories":7,"protein":0.3,"carbs":1.5,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Turkey Sticks","calories":70,"protein":10,"carbs":2,"fat":2.5,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Shapes (BBQ)","calories":124,"protein":2.1,"carbs":15.5,"fat":6,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Twisties","calories":106,"protein":1.1,"carbs":10.8,"fat":6.5,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Dates (Energy Balls)","calories":110,"protein":0.8,"carbs":29,"fat":0.2,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Raisins (Snack Box)","calories":90,"protein":0.9,"carbs":24,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Protein Cookie","calories":200,"protein":16,"carbs":20,"fat":8,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Hard Boiled Eggs (2)","calories":155,"protein":13,"carbs":1.1,"fat":10.6,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":false,"isShellfishFree":true}},{"name":"Tuna Pouch (Flavored)","calories":70,"protein":15,"carbs":1,"fat":0.5,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"All-Purpose Flour","calories":364,"protein":10,"carbs":76,"fat":1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Almond Flour","calories":579,"protein":21,"carbs":22,"fat":50,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Coconut Flour","calories":443,"protein":17,"carbs":60,"fat":15,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Breadcrumbs","calories":395,"protein":13,"carbs":72,"fat":5.3,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Panko Breadcrumbs","calories":383,"protein":12,"carbs":74,"fat":3.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cornstarch","calories":381,"protein":0.3,"carbs":91,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sugar (White)","calories":387,"protein":0,"carbs":100,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sugar (Brown)","calories":380,"protein":0,"carbs":98,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Stevia (Granulated)","calories":0,"protein":0,"carbs":100,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Erythritol","calories":20,"protein":0,"carbs":100,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cocoa Powder","calories":228,"protein":20,"carbs":58,"fat":14,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vanilla Extract","calories":14,"protein":0,"carbs":0.6,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Baking Powder","calories":5,"protein":0,"carbs":2.5,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Baking Soda","calories":0,"protein":0,"carbs":0,"fat":0,"foodType":"other","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chicken Stock","calories":10,"protein":1,"carbs":1,"fat":0.5,"foodType":"mixed","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Vegetable Stock","calories":12,"protein":0.4,"carbs":2.4,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"White Wine (Cooking)","calories":200,"protein":0.2,"carbs":6,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Apple Cider Vinegar","calories":3,"protein":0,"carbs":0.1,"fat":0,"foodType":"fruit","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Red Wine Vinegar","calories":3,"protein":0,"carbs":0.1,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rice Vinegar","calories":3,"protein":0,"carbs":0.1,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Fish Sauce","calories":9,"protein":1.5,"carbs":0.7,"fat":0,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Worcestershire Sauce","calories":11,"protein":0,"carbs":2.7,"fat":0,"foodType":"carb","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tomato Paste","calories":82,"protein":4.3,"carbs":19,"fat":0.5,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Coconut Cream","calories":330,"protein":3.5,"carbs":6,"fat":34,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cornmeal","calories":370,"protein":8.5,"carbs":79,"fat":3.6,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Arrowroot Powder","calories":357,"protein":0.3,"carbs":88,"fat":0.1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Psyllium Husk","calories":35,"protein":0,"carbs":9,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Gelatin Powder","calories":24,"protein":6,"carbs":0,"fat":0,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Agar Powder","calories":20,"protein":0.5,"carbs":5,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Miso Paste","calories":30,"protein":2,"carbs":4,"fat":1,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Gochujang","calories":30,"protein":0.5,"carbs":7,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Harissa Paste","calories":35,"protein":0.5,"carbs":3,"fat":2.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Curry Paste (Red)","calories":40,"protein":0.5,"carbs":4,"fat":2.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cooking Spray (Olive Oil)","calories":8,"protein":0,"carbs":0,"fat":1,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Milk Powder (Full Cream)","calories":496,"protein":26,"carbs":38,"fat":27,"foodType":"carb","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Yeast (Active Dry)","calories":23,"protein":3,"carbs":3,"fat":0.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Heavy Cream","calories":821,"protein":5,"carbs":7,"fat":88,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Half and Half","calories":315,"protein":7.2,"carbs":10,"fat":28,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sour Cream","calories":444,"protein":5.4,"carbs":10,"fat":44,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cream Cheese","calories":342,"protein":6,"carbs":4,"fat":34,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Parmesan Cheese","calories":431,"protein":38,"carbs":4,"fat":29,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Feta Cheese","calories":264,"protein":14,"carbs":4,"fat":21,"foodType":"fat","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Goat Cheese","calories":364,"protein":22,"carbs":3,"fat":30,"foodType":"protein","dietaryCategory":"plant-protein","dietaryRestrictions":{"isVegetarian":true,"isVegan":false,"isPescatarian":true,"isDairyFree":false,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rice Wine (Mirin)","calories":43,"protein":0,"carbs":7.5,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Oyster Sauce","calories":9,"protein":0.2,"carbs":2,"fat":0,"foodType":"carb","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":false}},{"name":"Hoisin Sauce","calories":35,"protein":0.5,"carbs":7,"fat":0.5,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":false,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tomato Sauce (Canned)","calories":35,"protein":1.5,"carbs":8,"fat":0.3,"foodType":"veggie","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Peanut Oil","calories":124,"protein":0,"carbs":0,"fat":14,"foodType":"fat","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":false,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Lard","calories":115,"protein":0,"carbs":0,"fat":12.8,"foodType":"fat","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Nutritional Yeast Flakes","calories":45,"protein":6,"carbs":5,"fat":0.5,"foodType":"protein","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Dextrose","calories":400,"protein":0,"carbs":100,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Maltodextrin","calories":380,"protein":0,"carbs":95,"fat":0,"foodType":"carb","dietaryCategory":"vegan","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Bacon","calories":541,"protein":37,"carbs":1.4,"fat":42,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Turkey Bacon","calories":218,"protein":29,"carbs":4,"fat":9.6,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Breakfast Sausage","calories":339,"protein":19,"carbs":2.6,"fat":28,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Ham (Deli Sliced)","calories":145,"protein":21,"carbs":2,"fat":6,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Turkey (Deli Sliced)","calories":104,"protein":18,"carbs":3.5,"fat":2.3,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Cod","calories":105,"protein":23,"carbs":0,"fat":0.9,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Tilapia","calories":128,"protein":26,"carbs":0,"fat":2.7,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Sea Bass","calories":124,"protein":24,"carbs":0,"fat":2.6,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Canned Salmon","calories":142,"protein":23,"carbs":0,"fat":5.4,"foodType":"protein","dietaryCategory":"fish","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Rotisserie Chicken","calories":184,"protein":28,"carbs":0,"fat":7.4,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":false,"isVegan":false,"isPescatarian":false,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Prosciutto","calories":271,"protein":27,"carbs":0,"fat":18,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Pepperoni","calories":494,"protein":23,"carbs":4,"fat":44,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}},{"name":"Chorizo","calories":455,"protein":24,"carbs":2,"fat":38,"foodType":"protein","dietaryCategory":"meat","dietaryRestrictions":{"isVegetarian":true,"isVegan":true,"isPescatarian":true,"isDairyFree":true,"isGlutenFree":true,"isNutFree":true,"isSoyFree":true,"isEggFree":true,"isShellfishFree":true}}];
         
         window.handleSwapClick = function(button) {
             const mealIndex = parseInt(button.dataset.meal);
@@ -4012,7 +3187,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
         window.swapFood = function(mealIndex, foodIndex) {
             console.log('swapFood called with:', mealIndex, foodIndex);
             const food = mealPlanData[currentDayType].meals[mealIndex].foods[foodIndex];
-            const userPreferences = ${JSON.stringify(userData.dietary_preferences || {})};
+            const userPreferences = {};
             
             // Get alternatives
             const alternatives = getFoodAlternatives(food.name, userPreferences);
@@ -4208,8 +3383,8 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 carbs: newCarbs,
                 fats: newFats,
                 fiber: Math.round((newFood.fiber || 0) * scalingFactor),
-                amount: \`\${Math.round(100 * scalingFactor)}g\`, // Adjust amount proportionally
-                macros: \`P: \${newProtein}g • C: \${newCarbs}g • F: \${newFats}g\`
+                amount: `${Math.round(100 * scalingFactor)}g`, // Adjust amount proportionally
+                macros: `P: ${newProtein}g • C: ${newCarbs}g • F: ${newFats}g`
             };
             
             // Update meal totals
@@ -4260,7 +3435,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     if ((protein === undefined || carbs === undefined || fats === undefined) && food.macros) {
                         console.log('  Parsing macros string: "' + food.macros + '"');
                         // Try to parse from macros string (format: "24g P • 0g C • 4g F")
-                        const macroMatch = food.macros.match(/(\d+)g\s*P.*?(\d+)g\s*C.*?(\d+)g\s*F/);
+                        const macroMatch = food.macros.match(/(d+)gs*P.*?(d+)gs*C.*?(d+)gs*F/);
                         if (macroMatch) {
                             protein = parseInt(macroMatch[1]) || 0;
                             carbs = parseInt(macroMatch[2]) || 0;
@@ -4268,9 +3443,9 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                             console.log('  Matched format 1: P:' + protein + ' C:' + carbs + ' F:' + fats);
                         } else {
                             // Try alternative format (format: "24g P • 0g C • 4g F")
-                            const pMatch = food.macros.match(/(\d+)g\s*P/);
-                            const cMatch = food.macros.match(/(\d+)g\s*C/);
-                            const fMatch = food.macros.match(/(\d+)g\s*F/);
+                            const pMatch = food.macros.match(/(d+)gs*P/);
+                            const cMatch = food.macros.match(/(d+)gs*C/);
+                            const fMatch = food.macros.match(/(d+)gs*F/);
                             
                             if (pMatch && cMatch && fMatch) {
                                 protein = parseInt(pMatch[1]) || 0;
@@ -4307,7 +3482,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                         if ((protein === undefined || carbs === undefined || fats === undefined) && food.macros) {
                             console.log('  Post-workout - Parsing macros string: "' + food.macros + '"');
                             // Try to parse from macros string (format: "24g P • 0g C • 4g F")
-                            const macroMatch = food.macros.match(/(\d+)g\s*P.*?(\d+)g\s*C.*?(\d+)g\s*F/);
+                            const macroMatch = food.macros.match(/(d+)gs*P.*?(d+)gs*C.*?(d+)gs*F/);
                             if (macroMatch) {
                                 protein = parseInt(macroMatch[1]) || 0;
                                 carbs = parseInt(macroMatch[2]) || 0;
@@ -4315,9 +3490,9 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                                 console.log('  Matched format 1: P:' + protein + ' C:' + carbs + ' F:' + fats);
                             } else {
                                 // Try alternative format (format: "24g P • 0g C • 4g F")
-                                const pMatch = food.macros.match(/(\d+)g\s*P/);
-                                const cMatch = food.macros.match(/(\d+)g\s*C/);
-                                const fMatch = food.macros.match(/(\d+)g\s*F/);
+                                const pMatch = food.macros.match(/(d+)gs*P/);
+                                const cMatch = food.macros.match(/(d+)gs*C/);
+                                const fMatch = food.macros.match(/(d+)gs*F/);
                                 
                                 if (pMatch && cMatch && fMatch) {
                                     protein = parseInt(pMatch[1]) || 0;
@@ -4357,7 +3532,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     if ((protein === undefined || carbs === undefined || fats === undefined) && food.macros) {
                         console.log('  Coffee - Parsing macros string: "' + food.macros + '"');
                         // Try to parse from macros string (format: "24g P • 0g C • 4g F")
-                        const macroMatch = food.macros.match(/(\d+)g\s*P.*?(\d+)g\s*C.*?(\d+)g\s*F/);
+                        const macroMatch = food.macros.match(/(d+)gs*P.*?(d+)gs*C.*?(d+)gs*F/);
                         if (macroMatch) {
                             protein = parseInt(macroMatch[1]) || 0;
                             carbs = parseInt(macroMatch[2]) || 0;
@@ -4365,9 +3540,9 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                             console.log('  Matched format 1: P:' + protein + ' C:' + carbs + ' F:' + fats);
                         } else {
                             // Try alternative format (format: "24g P • 0g C • 4g F")
-                            const pMatch = food.macros.match(/(\d+)g\s*P/);
-                            const cMatch = food.macros.match(/(\d+)g\s*C/);
-                            const fMatch = food.macros.match(/(\d+)g\s*F/);
+                            const pMatch = food.macros.match(/(d+)gs*P/);
+                            const cMatch = food.macros.match(/(d+)gs*C/);
+                            const fMatch = food.macros.match(/(d+)gs*F/);
                             
                             if (pMatch && cMatch && fMatch) {
                                 protein = parseInt(pMatch[1]) || 0;
@@ -4400,7 +3575,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                     if ((protein === undefined || carbs === undefined || fats === undefined) && food.macros) {
                         console.log('  Energy drink - Parsing macros string: "' + food.macros + '"');
                         // Try to parse from macros string (format: "24g P • 0g C • 4g F")
-                        const macroMatch = food.macros.match(/(\d+)g\s*P.*?(\d+)g\s*C.*?(\d+)g\s*F/);
+                        const macroMatch = food.macros.match(/(d+)gs*P.*?(d+)gs*C.*?(d+)gs*F/);
                         if (macroMatch) {
                             protein = parseInt(macroMatch[1]) || 0;
                             carbs = parseInt(macroMatch[2]) || 0;
@@ -4408,9 +3583,9 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                             console.log('  Matched format 1: P:' + protein + ' C:' + carbs + ' F:' + fats);
                         } else {
                             // Try alternative format (format: "24g P • 0g C • 4g F")
-                            const pMatch = food.macros.match(/(\d+)g\s*P/);
-                            const cMatch = food.macros.match(/(\d+)g\s*C/);
-                            const fMatch = food.macros.match(/(\d+)g\s*F/);
+                            const pMatch = food.macros.match(/(d+)gs*P/);
+                            const cMatch = food.macros.match(/(d+)gs*C/);
+                            const fMatch = food.macros.match(/(d+)gs*F/);
                             
                             if (pMatch && cMatch && fMatch) {
                                 protein = parseInt(pMatch[1]) || 0;
@@ -4502,10 +3677,10 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                 document.getElementById('mobileProgressFill').style.width = progress + '%';
             }
             if (document.getElementById('mealsComplete')) {
-                document.getElementById('mealsComplete').textContent = \`\${mealsCompleted}/\${totalMeals}\`;
+                document.getElementById('mealsComplete').textContent = `${mealsCompleted}/${totalMeals}`;
             }
             if (document.getElementById('percentComplete')) {
-                document.getElementById('percentComplete').textContent = \`\${Math.round(progress)}%\`;
+                document.getElementById('percentComplete').textContent = `${Math.round(progress)}%`;
             }
         }
         
@@ -4580,45 +3755,45 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             
             container.style.display = 'block';
             
-            container.innerHTML = \`
+            container.innerHTML = `
                 <div class="snacks-card">
                     <div class="snacks-header">
-                        <div class="snacks-title">\${snacks.name || 'Snacks & Drinks'}</div>
-                        <div class="snacks-timing">\${snacks.timing || 'Throughout day'}</div>
+                        <div class="snacks-title">${snacks.name || 'Snacks & Drinks'}</div>
+                        <div class="snacks-timing">${snacks.timing || 'Throughout day'}</div>
                     </div>
                     <div class="snacks-body">
-                        \${snacks.foods.map((food, foodIndex) => {
+                        ${snacks.foods.map((food, foodIndex) => {
                             if (food.isDietDrink) {
-                                return \`
+                                return `
                                     <div class="diet-drink-item">
-                                        <div class="diet-drink-name">\${food.name}</div>
+                                        <div class="diet-drink-name">${food.name}</div>
                                         <div class="diet-drink-note">Sugar-free • Enjoy anytime</div>
                                     </div>
-                                \`;
+                                `;
                             } else {
-                                return \`
+                                return `
                                     <div class="food-item">
                                         <div class="food-item-main">
                                             <div class="food-info">
-                                                <div class="food-name">\${food.name}</div>
-                                                <div class="food-amount">\${food.amount}</div>
-                                                \${food.macros ? \`<div class="food-macros">\${formatMacrosWithColors(food.macros, food.calories)}</div>\` : ''}
+                                                <div class="food-name">${food.name}</div>
+                                                <div class="food-amount">${food.amount}</div>
+                                                ${food.macros ? `<div class="food-macros">${formatMacrosWithColors(food.macros, food.calories)}</div>` : ''}
                                             </div>
-                                            <div class="check-button \${food.checked ? 'checked' : ''}" onclick="toggleSnackFood(\${foodIndex})">
+                                            <div class="check-button ${food.checked ? 'checked' : ''}" onclick="toggleSnackFood(${foodIndex})">
                                             </div>
                                         </div>
                                     </div>
-                                \`;
+                                `;
                             }
                         }).join('')}
-                        \${snacks.notes ? \`
+                        ${snacks.notes ? `
                             <div class="snacks-notes">
-                                \${snacks.notes}
+                                ${snacks.notes}
                             </div>
-                        \` : ''}
+                        ` : ''}
                     </div>
                 </div>
-            \`;
+            `;
         }
 
         function toggleSnackFood(foodIndex) {
@@ -4627,7 +3802,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             food.checked = !food.checked;
             
             // Save checked state
-            const key = \`\${currentDay}_\${currentDayType}_snacks_\${foodIndex}\`;
+            const key = `${currentDay}_${currentDayType}_snacks_${foodIndex}`;
             if (!progressData.checkedItems) progressData.checkedItems = {};
             progressData.checkedItems[key] = food.checked;
             
@@ -4646,7 +3821,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             container.style.display = 'block';
-            container.innerHTML = \`
+            container.innerHTML = `
                 <div class="supplements-standalone-card">
                     <div class="supplements-standalone-header" onclick="toggleMorningSupplements()">
                         <div class="supplements-standalone-title">Morning Supplements <span style="font-weight: 400;">(Before Eating)</span></div>
@@ -4657,20 +3832,20 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                         </div>
                     </div>
                     <div class="supplements-standalone-body collapsed">
-                        \${supplements.map((supp, suppIndex) => \`
+                        ${supplements.map((supp, suppIndex) => `
                             <div class="supplement-item">
                                 <div class="supplement-info">
-                                    <div class="supplement-name">\${supp.name}</div>
-                                    <div class="supplement-amount">\${supp.amount}</div>
-                                    <div class="supplement-priority \${supp.priority.toLowerCase()}">\${supp.priority}</div>
+                                    <div class="supplement-name">${supp.name}</div>
+                                    <div class="supplement-amount">${supp.amount}</div>
+                                    <div class="supplement-priority ${supp.priority.toLowerCase()}">${supp.priority}</div>
                                 </div>
-                                <div class="check-button" onclick="toggleStandaloneSupplement('morning', \${suppIndex})" id="morning-supplement-\${suppIndex}">
+                                <div class="check-button" onclick="toggleStandaloneSupplement('morning', ${suppIndex})" id="morning-supplement-${suppIndex}">
                                 </div>
                             </div>
-                        \`).join('')}
+                        `).join('')}
                     </div>
                 </div>
-            \`;
+            `;
         }
         
         function renderEveningSupplements(supplements) {
@@ -4683,7 +3858,7 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
             }
             
             container.style.display = 'block';
-            container.innerHTML = \`
+            container.innerHTML = `
                 <div class="supplements-standalone-card">
                     <div class="supplements-standalone-header" onclick="toggleEveningSupplements()">
                         <div class="supplements-standalone-title">Evening Supplements <span style="font-weight: 400;">(Before Bed)</span></div>
@@ -4694,20 +3869,20 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
                         </div>
                     </div>
                     <div class="supplements-standalone-body collapsed">
-                        \${supplements.map((supp, suppIndex) => \`
+                        ${supplements.map((supp, suppIndex) => `
                             <div class="supplement-item">
                                 <div class="supplement-info">
-                                    <div class="supplement-name">\${supp.name}</div>
-                                    <div class="supplement-amount">\${supp.amount}</div>
-                                    <div class="supplement-priority \${supp.priority.toLowerCase()}">\${supp.priority}</div>
+                                    <div class="supplement-name">${supp.name}</div>
+                                    <div class="supplement-amount">${supp.amount}</div>
+                                    <div class="supplement-priority ${supp.priority.toLowerCase()}">${supp.priority}</div>
                                 </div>
-                                <div class="check-button" onclick="toggleStandaloneSupplement('evening', \${suppIndex})" id="evening-supplement-\${suppIndex}">
+                                <div class="check-button" onclick="toggleStandaloneSupplement('evening', ${suppIndex})" id="evening-supplement-${suppIndex}">
                                 </div>
                             </div>
-                        \`).join('')}
+                        `).join('')}
                     </div>
                 </div>
-            \`;
+            `;
         }
         
 
@@ -4719,36 +3894,4 @@ function generateInteractiveHTML(meals, targets, userData, postWorkout, coffee, 
     
     <!-- Modal removed - using inline alternatives instead -->
 </body>
-</html>`;
-}
-
-// Helper functions for different day types
-function generateRestDayMeals(targets, userData) {
-  // Simplified - would generate actual rest day meals
-  return {
-    calories: Math.round(targets.calories * 0.85),
-    protein: `${Math.round(targets.protein * 0.9)}g min`,
-    carbs: `${Math.round(targets.hierarchical.carb_range.min * 0.8)}-${Math.round(targets.hierarchical.carb_range.max * 0.8)}g`,
-    fats: `${Math.round(targets.fat * 1.1)}g`,
-    water: "3.0L",
-    meals: [] // Would generate actual meals
-  };
-}
-
-function generateRefeedDayMeals(targets, userData) {
-  // Simplified - would generate actual refeed day meals
-  return {
-    calories: Math.round(targets.calories * 1.2),
-    protein: `${targets.protein}g min`,
-    carbs: `${Math.round(targets.hierarchical.carb_range.min * 1.5)}-${Math.round(targets.hierarchical.carb_range.max * 1.5)}g`,
-    fats: `${Math.round(targets.fat * 0.8)}g`,
-    water: "3.5L",
-    meals: [] // Would generate actual meals
-  };
-}
-
-module.exports = {
-  generateInteractiveHTML,
-  generateRestDayMeals,
-  generateRefeedDayMeals
-};
+</html>

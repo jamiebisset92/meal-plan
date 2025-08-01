@@ -19,6 +19,8 @@
   "trainingDays": "{{1.mappable_answers.`3310d809-77c1-4032-b08c-60aa34be84e8`}}",
   "refeedDay": "{{1.mappable_answers.`b0a13f21-e74b-4294-bc2e-86ba1f4033e0`}}",
   "trainingTime": "{{1.mappable_answers.`33f083e0-9676-41b4-8295-6658b060760c`}}",
+  "trainingSchedule": "{{1.mappable_answers.`c7254b0b-f4f4-459f-bd4d-cee1d458c182`}}",
+  "cookingTime": "{{1.mappable_answers.`3796875b-b88b-412a-a10b-7dc48283401f`}}",
   "includeFasting": "{{1.mappable_answers.`befee1e9-e5e1-438c-9d5d-6c87e1c48ad6`}}",
   "fastingDay": "{{1.mappable_answers.`2ae10a8f-d44a-436a-be91-d6c673642410`}}",
   "proteinPowder": "{{1.mappable_answers.`7643f185-59df-4721-b6e6-c4493aa8e66f`}}",
@@ -70,4 +72,4 @@
   "backImage": "{{1.mappable_answers.`696ac10b-f851-435e-8f96-0160a9325eae`}}",
   "extraNotesEnabled": "{{1.mappable_answers.`abf9bd7b-522d-4b5b-ab98-ae110675a523`}}",
   "extraNotes": "{{1.mappable_answers.`ec415442-82c7-4d78-8505-cfed53f38454`}}"
-} 
+}

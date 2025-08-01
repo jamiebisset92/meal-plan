@@ -15,39 +15,48 @@ const templateService = new MealTemplateService();
 class TruePrecisionEngine {
   constructor() {
     this.CALORIE_TOLERANCE = 25;
-    this.iterations = 0;
-    this.maxIterations = 200; // Increased for better precision
-    this.diversityTracker = {}; // Track food usage for variety
-    this.mealTypeRules = this.initializeMealRules();
-    this.foodPairings = this.initializeFoodPairings();
+    this.PROTEIN_TOLERANCE = 5;
+    this.CARB_TOLERANCE = 5;
+    this.FIBER_TOLERANCE = 3;
+    this.ADJUSTMENT_INCREMENT = 5;
+    this.MAX_ADJUSTMENT_CYCLES = 8;
+    this.foodUsageCount = {};
+    this.diversityBonus = 1.5;
+    this.initializeMealRules();
+    this.initializeFoodPairings();
     this.foodDatabase = foodDatabase; // Load food database
   }
 
   initializeMealRules() {
-    return {
+    // Enhanced meal rules with training schedule integration
+    this.mealRules = {
       breakfast: {
-        preferredProteins: ['egg', 'greek yogurt', 'whey protein', 'cottage cheese'],
-        preferredCarbs: ['oats', 'ezekiel bread', 'wholemeal bread', 'english muffin'],
-        carbRatio: 1.2, // Higher carbs for energy
-        proteinRatio: 1.0
+        preferredCarbs: ['fast', 'medium'],
+        carbTiming: 'moderate',
+        proteinTypes: ['lean', 'eggs', 'dairy'],
+        fiberTarget: 'moderate',
+        cookingTimePreference: 'fast' // Default, will be overridden by user data
       },
       lunch: {
-        preferredProteins: ['chicken', 'turkey', 'salmon', 'tuna'],
-        preferredCarbs: ['brown rice', 'quinoa', 'sweet potato', 'wrap'],
-        carbRatio: 1.1,
-        proteinRatio: 1.0
-      },
-      afternoon: {
-        preferredProteins: ['chicken', 'turkey', 'fish', 'protein powder'],
-        preferredCarbs: ['rice', 'potato', 'rice cakes', 'fruit'],
-        carbRatio: 1.0,
-        proteinRatio: 0.9
+        preferredCarbs: ['medium', 'slow'],
+        carbTiming: 'high',
+        proteinTypes: ['lean', 'fish'],
+        fiberTarget: 'high',
+        cookingTimePreference: 'simple'
       },
       dinner: {
-        preferredProteins: ['steak', 'salmon', 'lamb', 'pork', 'chicken'],
-        preferredCarbs: ['sweet potato', 'quinoa', 'vegetables'], // Lower carb focus
-        carbRatio: 0.8, // Lower carbs for evening
-        proteinRatio: 1.2 // Higher protein
+        preferredCarbs: ['slow', 'vegetables'],
+        carbTiming: 'low',
+        proteinTypes: ['lean', 'fatty'],
+        fiberTarget: 'high',
+        cookingTimePreference: 'full'
+      },
+      snack: {
+        preferredCarbs: ['fast'],
+        carbTiming: 'low',
+        proteinTypes: ['dairy', 'powder'],
+        fiberTarget: 'low',
+        cookingTimePreference: 'fast'
       }
     };
   }
@@ -68,56 +77,24 @@ class TruePrecisionEngine {
   }
 
   buildPrecisionMealPlan(targets, userData, dayType = 'training') {
-    console.log('🎯 buildPrecisionMealPlan called with targets:', JSON.stringify(targets, null, 2));
-    console.log('📅 Day type:', dayType);
+    console.log('🎯 PRECISION MEAL PLAN GENERATION WITH MODULE-58 ENHANCEMENTS...');
     
-    // Validate input targets
-    if (!targets || typeof targets !== 'object') {
-      throw new Error('Invalid targets object provided');
-    }
+    // Module-58 Enhanced Analysis
+    const trainingAnalysis = this.analyzeTrainingSchedule(userData);
+    const cookingPreferences = this.analyzeCookingPreferences(userData);
     
-    if (!targets.calories || isNaN(targets.calories)) {
-      throw new Error('Invalid or missing calories in targets');
-    }
+    console.log('🏋️ Training Schedule Analysis:', trainingAnalysis);
+    console.log('👨‍🍳 Cooking Preferences:', cookingPreferences);
     
-    if (!targets.hierarchical || typeof targets.hierarchical !== 'object') {
-      throw new Error('Invalid or missing hierarchical object in targets');
-    }
+    // Adjust targets based on training pattern
+    const adjustedTargets = this.adjustTargetsForTrainingPattern(targets, trainingAnalysis, dayType);
     
-    if (!targets.hierarchical.carb_range || 
-        !targets.hierarchical.carb_range.min || 
-        !targets.hierarchical.carb_range.max ||
-        isNaN(targets.hierarchical.carb_range.min) ||
-        isNaN(targets.hierarchical.carb_range.max)) {
-      throw new Error('Invalid or missing carb_range in hierarchical targets');
-    }
+    // Deep clone to avoid mutation
+    const originalTargets = JSON.parse(JSON.stringify(adjustedTargets));
     
-    if (!targets.hierarchical.fiber_range || 
-        !targets.hierarchical.fiber_range.min || 
-        !targets.hierarchical.fiber_range.max ||
-        isNaN(targets.hierarchical.fiber_range.min) ||
-        isNaN(targets.hierarchical.fiber_range.max)) {
-      throw new Error('Invalid or missing fiber_range in hierarchical targets');
-    }
-    
-    if (!targets.hierarchical.protein_minimum || isNaN(targets.hierarchical.protein_minimum)) {
-      throw new Error('Invalid or missing protein_minimum in hierarchical targets');
-    }
-    
-    if (!targets.protein || isNaN(targets.protein)) {
-      throw new Error('Invalid or missing protein in targets');
-    }
-    
-    if (!targets.fat || isNaN(targets.fat)) {
-      throw new Error('Invalid or missing fat in targets');
-    }
-    
-    // Create a deep copy of targets to prevent mutation
-    const originalTargets = JSON.parse(JSON.stringify(targets));
-    
-    console.log('🎯 PRECISION MEAL PLAN GENERATION v6.0 STARTING...');
     console.log(`   Methodology: ${originalTargets.methodology || 'moderate'}`);
     console.log(`   Day Type: ${dayType}`);
+    console.log(`   Carb Cycling Pattern: ${trainingAnalysis.carbCyclingPattern}`);
     console.log(`   Target: ${originalTargets.calories} calories (±25)`);
     console.log(`   Protein: ${originalTargets.protein}g minimum`);
     console.log(`   Carbs: ${originalTargets.hierarchical?.carb_range?.min}-${originalTargets.hierarchical?.carb_range?.max}g`);
@@ -148,230 +125,71 @@ class TruePrecisionEngine {
       console.log('🎯 After energy drinks generation:', JSON.stringify(originalTargets, null, 2));
     }
     
-    // Generate meals first to calculate totals for snacks fiber assessment
-    console.log('🎯 Creating initial meals for snacks assessment...');
-    const tempMeals = this.createInitialMeals(originalTargets, userData, dayType);
-    const tempTotals = this.calculateMealTotals(tempMeals);
+    // Generate meals with enhanced timing and complexity awareness
+    console.log('🎯 Creating meals with cooking time preferences...');
+    const meals = this.createEnhancedMeals(originalTargets, userData, dayType, trainingAnalysis, cookingPreferences);
+    const tempTotals = this.calculateMealTotals(meals);
     
     // Generate snacks based on user preferences and nutritional gaps
     let snacks = null;
     if (this.shouldIncludeSnacks(userData)) {
       snacks = this.generateSnacksNutrition(userData, originalTargets, tempTotals);
-      console.log('🍪 Snacks object:', snacks);
+      console.log('🍿 Snacks object:', snacks);
     }
     
-    // Generate alcohol if user wants to include it (Saturday only)
+    // Include alcohol if applicable
     let alcohol = null;
     if (this.shouldIncludeAlcohol(userData)) {
       alcohol = this.generateAlcoholNutrition(userData, originalTargets);
-      console.log('🍷 Alcohol object:', alcohol);
+      console.log('🍺 Alcohol object:', alcohol);
     }
     
-    // Create adjusted targets for meal generation with proper deep copy
-    console.log('🎯 Original targets before deep copy:', originalTargets);
-    const adjustedTargets = JSON.parse(JSON.stringify(originalTargets));
-    console.log('🎯 Adjusted targets after deep copy:', adjustedTargets);
+    // Module-58 Precision Adjustment Engine
+    const finalMeals = this.runPrecisionAdjustmentEngine(meals, originalTargets, trainingAnalysis);
     
-    // Verify deep copy worked
-    console.log('🎯 Deep copy verification - originalTargets.calories:', originalTargets.calories, 'adjustedTargets.calories:', adjustedTargets.calories);
-    console.log('🎯 Deep copy verification - originalTargets.hierarchical.carb_range:', originalTargets.hierarchical.carb_range, 'adjustedTargets.hierarchical.carb_range:', adjustedTargets.hierarchical.carb_range);
-    
-    const fixedComponents = [];
-    
-    console.log('🎯 Original targets:', originalTargets);
-    
-    if (postWorkout) {
-      fixedComponents.push(postWorkout);
-      console.log('🎯 Before post-workout adjustment - adjustedTargets.calories:', adjustedTargets.calories, 'postWorkout.calories:', postWorkout.calories);
-      console.log('🎯 Before post-workout adjustment - adjustedTargets.hierarchical.carb_range:', adjustedTargets.hierarchical.carb_range);
-      
-      adjustedTargets.calories -= postWorkout.calories;
-      console.log('🎯 After calories adjustment - adjustedTargets.calories:', adjustedTargets.calories);
-      
-      console.log('🎯 Before adjustment - protein_minimum:', adjustedTargets.hierarchical.protein_minimum, 'postWorkout.protein:', postWorkout.protein);
-      adjustedTargets.hierarchical.protein_minimum = Math.max(0, adjustedTargets.hierarchical.protein_minimum - postWorkout.protein);
-      console.log('🎯 After adjustment - protein_minimum:', adjustedTargets.hierarchical.protein_minimum);
-      
-      console.log('🎯 Before adjustment - carb_range:', adjustedTargets.hierarchical.carb_range, 'postWorkout.carbs:', postWorkout.carbs);
-      adjustedTargets.hierarchical.carb_range = {
-        min: Math.max(0, adjustedTargets.hierarchical.carb_range.min - postWorkout.carbs),
-        max: Math.max(0, adjustedTargets.hierarchical.carb_range.max - postWorkout.carbs)
-      };
-      console.log('🎯 After adjustment - carb_range:', adjustedTargets.hierarchical.carb_range);
-      
-      adjustedTargets.hierarchical.fiber_range = {
-        min: Math.max(0, adjustedTargets.hierarchical.fiber_range.min - postWorkout.fiber),
-        max: Math.max(0, adjustedTargets.hierarchical.fiber_range.max - postWorkout.fiber)
-      };
-      console.log('🎯 After post-workout adjustment:', adjustedTargets);
-    }
-    
-    if (coffee) {
-      fixedComponents.push(coffee);
-      adjustedTargets.calories -= coffee.totals.calories;
-      adjustedTargets.hierarchical.carb_range = {
-        min: Math.max(0, adjustedTargets.hierarchical.carb_range.min - coffee.totals.carbs),
-        max: Math.max(0, adjustedTargets.hierarchical.carb_range.max - coffee.totals.carbs)
-      };
-    }
-    
-    if (energyDrinks) {
-      fixedComponents.push(energyDrinks);
-      adjustedTargets.calories -= energyDrinks.totals.calories;
-      adjustedTargets.hierarchical.carb_range = {
-        min: Math.max(0, adjustedTargets.hierarchical.carb_range.min - energyDrinks.totals.carbs),
-        max: Math.max(0, adjustedTargets.hierarchical.carb_range.max - energyDrinks.totals.carbs)
-      };
-    }
-    
-    // Initial meal structure - use adjusted targets for meal generation
-    console.log('🎯 Creating meals with adjusted targets:', adjustedTargets);
-    
-    // Comprehensive validation of adjusted targets
-    if (!adjustedTargets.calories || isNaN(adjustedTargets.calories)) {
-      console.error('❌ Invalid adjusted targets - calories:', adjustedTargets.calories);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - calories is NaN or missing');
-    }
-    
-    if (!adjustedTargets.hierarchical || typeof adjustedTargets.hierarchical !== 'object') {
-      console.error('❌ Invalid adjusted targets - hierarchical object missing');
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - hierarchical object is missing');
-    }
-    
-    if (!adjustedTargets.hierarchical.carb_range || 
-        !adjustedTargets.hierarchical.carb_range.min || 
-        !adjustedTargets.hierarchical.carb_range.max ||
-        isNaN(adjustedTargets.hierarchical.carb_range.min) ||
-        isNaN(adjustedTargets.hierarchical.carb_range.max)) {
-      console.error('❌ Invalid adjusted targets - carb_range:', adjustedTargets.hierarchical.carb_range);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - carb_range contains NaN or is missing');
-    }
-    
-    if (!adjustedTargets.hierarchical.fiber_range || 
-        !adjustedTargets.hierarchical.fiber_range.min || 
-        !adjustedTargets.hierarchical.fiber_range.max ||
-        isNaN(adjustedTargets.hierarchical.fiber_range.min) ||
-        isNaN(adjustedTargets.hierarchical.fiber_range.max)) {
-      console.error('❌ Invalid adjusted targets - fiber_range:', adjustedTargets.hierarchical.fiber_range);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - fiber_range contains NaN or is missing');
-    }
-    
-    if (!adjustedTargets.hierarchical.protein_minimum || isNaN(adjustedTargets.hierarchical.protein_minimum)) {
-      console.error('❌ Invalid adjusted targets - protein_minimum:', adjustedTargets.hierarchical.protein_minimum);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - protein_minimum is NaN or missing');
-    }
-    
-    if (!adjustedTargets.protein || isNaN(adjustedTargets.protein)) {
-      console.error('❌ Invalid adjusted targets - protein:', adjustedTargets.protein);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - protein is NaN or missing');
-    }
-    
-    if (!adjustedTargets.fat || isNaN(adjustedTargets.fat)) {
-      console.error('❌ Invalid adjusted targets - fat:', adjustedTargets.fat);
-      console.error('Full adjustedTargets object:', JSON.stringify(adjustedTargets, null, 2));
-      throw new Error('Invalid adjusted targets - fat is NaN or missing');
-    }
-    
-    let meals = this.createInitialMeals(adjustedTargets, userData, dayType);
-    
-    // Precision optimization loop
-    let iterations = 0;
-    const maxIterations = 200;
-    
-    while (iterations < maxIterations) {
-      iterations++;
-      
-      // Calculate current totals (meals only)
-      const mealTotals = this.calculateMealTotals(meals);
-      
-      // Create totals including post-workout
-      const totals = {
-        calories: mealTotals.calories + (postWorkout ? postWorkout.calories : 0),
-        protein: mealTotals.protein + (postWorkout ? postWorkout.protein : 0),
-        carbs: mealTotals.carbs + (postWorkout ? postWorkout.carbs : 0),
-        fiber: mealTotals.fiber + (postWorkout ? postWorkout.fiber : 0),
-        fats: mealTotals.fats + (postWorkout ? postWorkout.fats : 0)
-      };
-      
-      // Progressive adjustment factor
-      const adjustmentFactor = Math.max(0.1, 1 - (iterations / 50));
-      
-      // Validate against original targets
-      if (this.validateTargets(totals, originalTargets)) {
-        console.log(`✅ Precision achieved after ${iterations} iterations`);
-        break;
-      }
-      
-      // Adjust meals for precision
-      console.log(`   Iteration ${iterations}: Adjusting (factor: ${adjustmentFactor.toFixed(2)})...`);
-      
-      if (this.adjustForPrecision(meals, originalTargets, adjustmentFactor)) {
-        console.log(`✅ CLOSE ENOUGH: ${Math.abs(totals.calories - originalTargets.calories)} calories off (within 50 cal tolerance)`);
-        break;
-      }
-    }
-    
-    if (iterations >= maxIterations) {
-      const finalTotals = this.calculateMealTotals(meals);
-      console.log(`⚠️  Failed to achieve precision after ${maxIterations} iterations`);
-      console.log(`   Final totals:`, finalTotals);
-    }
-    
-    // Clean up temporary adjustment foods
-    this.cleanupAdjustmentFoods(meals);
-    
-    // Add supplements data to result
-    let supplementsData = null;
-    if (userData.supplementsData) {
-      // Self-reference removed - function is defined in this file
-      supplementsData = generateSupplementSection(userData.supplementsData, userData);
-    }
-
-    // Include all fixed components if generated
-        // Log template usage summary
-    let templateCount = 0;
-    let fallbackCount = 0;
-    
-    meals.forEach(meal => {
-      if (meal.templateId) {
-        templateCount++;
-        console.log(`✅ Template used for ${meal.name}: ${meal.templateId}`);
-      } else {
-        fallbackCount++;
-        console.log(`⚠️ Fallback used for ${meal.name}`);
-      }
-    });
-    
-    if (postWorkout && postWorkout.templateId) {
-      templateCount++;
-      console.log(`✅ Template used for post-workout: ${postWorkout.templateId}`);
-    } else if (postWorkout) {
-      fallbackCount++;
-      console.log(`⚠️ Fallback used for post-workout`);
-    }
-    
-    console.log(`\n📊 Template Usage Summary:`);
-    console.log(`   Templates used: ${templateCount}`);
-    console.log(`   Fallbacks used: ${fallbackCount}`);
-    console.log(`   Success rate: ${templateCount > 0 ? Math.round((templateCount / (templateCount + fallbackCount)) * 100) : 0}%\n`);
-    
-    const result = {
-      meals, 
-      postWorkout, 
-      coffee, 
-      energyDrinks, 
-      snacks, 
-      alcohol, 
-      supplements: supplementsData
+    // Return structured meal plan
+    return {
+      meals: finalMeals,
+      postWorkout,
+      coffee,
+      energyDrinks,
+      snacks,
+      alcohol,
+      supplements: userData.supplements || null,
+      trainingAnalysis,
+      cookingPreferences
     };
-    console.log('🎯 buildPrecisionMealPlan returning with supplements:', !!result.supplements, result.supplements ? Object.keys(result.supplements) : 'null');
-    return result;
+  }
+
+  adjustTargetsForTrainingPattern(targets, trainingAnalysis, dayType) {
+    const adjusted = JSON.parse(JSON.stringify(targets));
+    
+    // Implement carb cycling based on training pattern
+    if (trainingAnalysis.carbCyclingPattern === 'aggressive') {
+      if (dayType === 'training') {
+        // High carb on training days
+        adjusted.hierarchical.carb_range.min *= 1.1;
+        adjusted.hierarchical.carb_range.max *= 1.15;
+      } else if (dayType === 'rest') {
+        // Low carb on rest days
+        adjusted.hierarchical.carb_range.min *= 0.7;
+        adjusted.hierarchical.carb_range.max *= 0.75;
+      }
+    } else if (trainingAnalysis.carbCyclingPattern === 'moderate') {
+      if (dayType === 'training') {
+        adjusted.hierarchical.carb_range.min *= 1.05;
+        adjusted.hierarchical.carb_range.max *= 1.1;
+      } else if (dayType === 'rest') {
+        adjusted.hierarchical.carb_range.min *= 0.85;
+        adjusted.hierarchical.carb_range.max *= 0.9;
+      }
+    }
+    
+    // Round to nearest 5g
+    adjusted.hierarchical.carb_range.min = Math.round(adjusted.hierarchical.carb_range.min / 5) * 5;
+    adjusted.hierarchical.carb_range.max = Math.round(adjusted.hierarchical.carb_range.max / 5) * 5;
+    
+    return adjusted;
   }
 
   createInitialMeals(targets, userData = {}, dayType = 'training') {
@@ -1960,6 +1778,592 @@ class TruePrecisionEngine {
     
     return notes.join(' ');
   }
+
+  // Enhanced Module-58 Methods for Training Schedule Integration
+  analyzeTrainingSchedule(userData) {
+    const schedule = userData.trainingSchedule || {};
+    const analysis = {
+      totalTrainingDays: 0,
+      lowerBodyDays: [],
+      upperBodyDays: [],
+      restDays: [],
+      primaryTrainingDay: null,
+      carbCyclingPattern: 'moderate'
+    };
+
+    // Parse the training schedule matrix
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    days.forEach(day => {
+      const daySchedule = schedule[day] || [];
+      if (daySchedule.includes('Lower Body')) {
+        analysis.lowerBodyDays.push(day);
+        analysis.totalTrainingDays++;
+      } else if (daySchedule.includes('Upper Body')) {
+        analysis.upperBodyDays.push(day);
+        analysis.totalTrainingDays++;
+      } else if (daySchedule.includes('Rest Day') || daySchedule.length === 0) {
+        analysis.restDays.push(day);
+      }
+    });
+
+    // Determine primary training day (usually the refeed day)
+    analysis.primaryTrainingDay = userData.refeedDay || analysis.lowerBodyDays[0] || 'Saturday';
+
+    // Set carb cycling pattern based on training frequency
+    if (analysis.totalTrainingDays >= 5) {
+      analysis.carbCyclingPattern = 'aggressive';
+    } else if (analysis.totalTrainingDays >= 3) {
+      analysis.carbCyclingPattern = 'moderate';
+    } else {
+      analysis.carbCyclingPattern = 'conservative';
+    }
+
+    return analysis;
+  }
+
+  // Enhanced Module-58 Methods for Cooking Time Integration
+  analyzeCookingPreferences(userData) {
+    const cookingTime = userData.cookingTime || {};
+    const preferences = {
+      morning: cookingTime.morning || 'Fast & Convenient Options',
+      midday: cookingTime.midday || 'Simple Meal Prep',
+      night: cookingTime.night || 'Full Meal Prep',
+      mealComplexity: {}
+    };
+
+    // Map cooking time to meal complexity
+    const complexityMap = {
+      'Fast & Convenient Options': {
+        maxPrepTime: 10,
+        preferredFoods: ['protein powder', 'greek yogurt', 'pre-cooked', 'canned', 'ready-to-eat'],
+        avoidFoods: ['raw meat', 'dry grains', 'complex recipes']
+      },
+      'Simple Meal Prep': {
+        maxPrepTime: 30,
+        preferredFoods: ['quick-cooking', 'one-pan', 'microwave-friendly'],
+        avoidFoods: ['elaborate recipes', 'multiple cooking methods']
+      },
+      'Full Meal Prep': {
+        maxPrepTime: 60,
+        preferredFoods: ['any'],
+        avoidFoods: []
+      }
+    };
+
+    // Assign complexity to meal times
+    preferences.mealComplexity = {
+      breakfast: complexityMap[preferences.morning],
+      lunch: complexityMap[preferences.midday],
+      dinner: complexityMap[preferences.night],
+      snack: complexityMap['Fast & Convenient Options']
+    };
+
+    return preferences;
+  }
+
+  // Enhanced meal timing based on training schedule
+  determineMealTimingWithTraining(userData, mealCount) {
+    const trainingAnalysis = this.analyzeTrainingSchedule(userData);
+    const currentDay = userData.currentDay || new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const trainingTime = userData.trainingTime || 'Morning (After Eating)';
+    
+    const mealTimings = [];
+    const isTrainingDay = trainingAnalysis.lowerBodyDays.includes(currentDay) || 
+                         trainingAnalysis.upperBodyDays.includes(currentDay);
+    const isLowerBodyDay = trainingAnalysis.lowerBodyDays.includes(currentDay);
+
+    // Adjust meal timing based on training
+    if (isTrainingDay) {
+      if (trainingTime.includes('Morning (Before Eating)')) {
+        // Fasted training
+        mealTimings.push({ name: 'Pre-Workout', type: 'pre-workout', carbFocus: 'minimal' });
+        mealTimings.push({ name: 'Post-Workout Breakfast', type: 'breakfast', carbFocus: 'high' });
+      } else if (trainingTime.includes('Morning (After Eating)')) {
+        mealTimings.push({ name: 'Pre-Training Breakfast', type: 'breakfast', carbFocus: 'high' });
+      } else if (trainingTime.includes('Mid-Day')) {
+        mealTimings.push({ name: 'Breakfast', type: 'breakfast', carbFocus: 'moderate' });
+        mealTimings.push({ name: 'Pre-Training Meal', type: 'lunch', carbFocus: 'high' });
+      }
+    } else {
+      // Rest day - standard timing
+      mealTimings.push({ name: 'Breakfast', type: 'breakfast', carbFocus: 'moderate' });
+    }
+
+    // Fill remaining meals
+    const remainingMeals = mealCount - mealTimings.length;
+    const mealTypes = ['lunch', 'snack', 'dinner'];
+    
+    for (let i = 0; i < remainingMeals && i < mealTypes.length; i++) {
+      const mealType = mealTypes[i];
+      const carbFocus = isLowerBodyDay && mealType === 'lunch' ? 'high' : 
+                       mealType === 'dinner' ? 'low' : 'moderate';
+      
+      mealTimings.push({
+        name: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+        type: mealType,
+        carbFocus: carbFocus
+      });
+    }
+
+    return mealTimings;
+  }
+
+  createEnhancedMeals(targets, userData, dayType, trainingAnalysis, cookingPreferences) {
+    const meals = [];
+    const mealCount = parseInt(userData.numberOfMeals) || 4;
+    const mealTimings = this.determineMealTimingWithTraining(userData, mealCount);
+    
+    // Calculate per-meal targets considering cooking complexity
+    const mealBudget = this.calculateMealBudget(targets, mealCount, mealTimings);
+    
+    let usedProteins = [];
+    let usedCarbs = [];
+    
+    mealTimings.forEach((timing, index) => {
+      const mealType = timing.type;
+      const complexity = cookingPreferences.mealComplexity[mealType];
+      const allocation = mealBudget[index];
+      
+      const meal = {
+        number: index + 1,
+        name: timing.name,
+        type: mealType,
+        carbFocus: timing.carbFocus,
+        components: { protein: null, carbs: null, vegetables: [], fats: null, extras: [] },
+        totals: { calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 },
+        notes: []
+      };
+      
+      // Select protein based on cooking time
+      const proteinChoice = this.selectProteinWithComplexity(
+        allocation.protein,
+        complexity,
+        userData.favProtein,
+        mealType,
+        usedProteins
+      );
+      if (proteinChoice) {
+        meal.components.protein = proteinChoice;
+        usedProteins.push(proteinChoice.name);
+      }
+      
+      // Select carbs based on training focus and cooking time
+      const carbChoice = this.selectCarbWithComplexity(
+        allocation.carbs,
+        timing.carbFocus,
+        complexity,
+        userData.favCarbs,
+        mealType,
+        usedCarbs
+      );
+      if (carbChoice) {
+        meal.components.carbs = carbChoice;
+        usedCarbs.push(carbChoice.name);
+      }
+      
+      // Add vegetables
+      const vegChoice = this.selectVegetableWithComplexity(complexity);
+      if (vegChoice) {
+        meal.components.vegetables.push(vegChoice);
+      }
+      
+      // Calculate meal totals
+      meal.totals = this.recalculateFromComponents({ meals: [meal] });
+      
+      // Add meal notes based on timing and training
+      if (timing.carbFocus === 'high' && trainingAnalysis.lowerBodyDays.includes(userData.currentDay)) {
+        meal.notes.push('Higher carbs for leg day performance');
+      }
+      if (complexity.maxPrepTime <= 10) {
+        meal.notes.push('Quick prep option selected');
+      }
+      
+      meals.push(meal);
+    });
+    
+    return meals;
+  }
+
+  calculateMealBudget(targets, mealCount, mealTimings) {
+    const budget = [];
+    const totalCalories = targets.calories;
+    const totalProtein = targets.protein;
+    const totalCarbs = targets.hierarchical.carb_range.min;
+    
+    // Distribute based on meal timing and carb focus
+    mealTimings.forEach((timing, index) => {
+      let calorieRatio = 1 / mealCount;
+      let carbRatio = 1 / mealCount;
+      
+      // Adjust ratios based on carb focus
+      if (timing.carbFocus === 'high') {
+        calorieRatio *= 1.2;
+        carbRatio *= 1.3;
+      } else if (timing.carbFocus === 'low') {
+        calorieRatio *= 0.9;
+        carbRatio *= 0.7;
+      }
+      
+      budget.push({
+        calories: Math.round(totalCalories * calorieRatio),
+        protein: Math.round(totalProtein / mealCount),
+        carbs: Math.round(totalCarbs * carbRatio),
+        fiber: Math.round(targets.hierarchical.fiber_range.min / mealCount)
+      });
+    });
+    
+    return budget;
+  }
+
+  selectProteinWithComplexity(targetGrams, complexity, preferences, mealType, usedProteins) {
+    // Get proteins from the food database
+    const allProteins = foodDatabase.getFoodsByFoodType('protein') || [];
+    const proteins = allProteins.filter(p => {
+      // Filter based on cooking complexity
+      if (complexity.maxPrepTime <= 10) {
+        // Quick proteins: powder, pre-cooked, canned
+        return p.prepTime <= 10 || p.preCooked || 
+               p.name.includes('Powder') || p.name.includes('Greek Yogurt') ||
+               p.name.includes('Cottage Cheese') || p.name.includes('Canned');
+      }
+      return !complexity.avoidFoods.some(avoid => p.name.toLowerCase().includes(avoid));
+    });
+    
+    // Apply preference scoring
+    const scored = proteins.map(p => ({
+      ...p,
+      score: this.calculateFoodScore(p, preferences, usedProteins, targetGrams)
+    }));
+    
+    // Sort by score and select best match
+    scored.sort((a, b) => b.score - a.score);
+    const selected = scored[0];
+    
+    if (selected) {
+      // Scale to target
+      const scale = targetGrams / selected.protein;
+      return this.scaleFood(selected, scale);
+    }
+    
+    return null;
+  }
+
+  selectCarbWithComplexity(targetCarbs, carbFocus, complexity, preferences, mealType, usedCarbs) {
+    const allCarbs = foodDatabase.getFoodsByFoodType('carb') || [];
+    const carbs = allCarbs.filter(c => {
+      // Filter based on cooking complexity
+      if (complexity.maxPrepTime <= 10) {
+        return c.prepTime <= 10 || c.instant || c.name.includes('Bread') || c.name.includes('Rice Cakes');
+      }
+      // Filter based on carb focus
+      if (carbFocus === 'high') {
+        return c.carbType === 'fast' || c.carbType === 'medium' || c.glycemicIndex >= 70;
+      } else if (carbFocus === 'low') {
+        return c.carbType === 'slow' || c.fiber > 3 || c.glycemicIndex <= 55;
+      }
+      return true;
+    });
+    
+    // Apply preference scoring
+    const scored = carbs.map(c => ({
+      ...c,
+      score: this.calculateFoodScore(c, preferences, usedCarbs, targetCarbs)
+    }));
+    
+    // Sort by score and select best match
+    scored.sort((a, b) => b.score - a.score);
+    const selected = scored[0];
+    
+    if (selected) {
+      // Scale to target
+      const scale = targetCarbs / selected.carbs;
+      return this.scaleFood(selected, scale);
+    }
+    
+    return null;
+  }
+
+  selectVegetableWithComplexity(complexity) {
+    const allVegetables = foodDatabase.getFoodsByFoodType('vegetable') || [];
+    const vegetables = allVegetables.filter(v => {
+      if (complexity.maxPrepTime <= 10) {
+        return v.prepTime <= 5 || v.precut || v.frozen || 
+               v.name.includes('Spinach') || v.name.includes('Lettuce') ||
+               v.name.includes('Cucumber') || v.name.includes('Tomato');
+      }
+      return true;
+    });
+    
+    // Select random vegetable for variety
+    const selected = vegetables[Math.floor(Math.random() * vegetables.length)];
+    
+    if (selected) {
+      // Standard serving size
+      return {
+        ...selected,
+        amount: '100g'
+      };
+    }
+    
+    return null;
+  }
+
+  calculateFoodScore(food, preferences, usedFoods, targetAmount) {
+    let score = 100;
+    
+    // Preference bonus - handle comma-separated string
+    if (preferences) {
+      const prefList = typeof preferences === 'string' ? preferences.split(',').map(p => p.trim()) : preferences;
+      if (prefList.some(pref => food.name.toLowerCase().includes(pref.toLowerCase()))) {
+        score += 50;
+      }
+    }
+    
+    // Diversity penalty
+    if (usedFoods.includes(food.name)) {
+      score -= 30;
+    }
+    
+    // Amount matching bonus
+    const foodAmount = parseFloat(food.amount) || 100;
+    const amountDiff = Math.abs(foodAmount - targetAmount) / targetAmount;
+    score -= amountDiff * 20;
+    
+    return score;
+  }
+
+  scaleFood(food, scale) {
+    // Ensure scale is within reasonable bounds
+    const adjustedScale = Math.max(0.5, Math.min(3, scale));
+    
+    // Parse the current amount
+    let baseAmount = 100; // default
+    let unit = 'g';
+    
+    if (food.amount) {
+      const amountMatch = food.amount.match(/(\d+(?:\.\d+)?)\s*(\w+)?/);
+      if (amountMatch) {
+        baseAmount = parseFloat(amountMatch[1]);
+        unit = amountMatch[2] || 'g';
+      }
+    }
+    
+    return {
+      ...food,
+      amount: this.formatAmount(baseAmount * adjustedScale, unit),
+      calories: Math.round(food.calories * adjustedScale),
+      protein: Math.round(food.protein * adjustedScale),
+      carbs: Math.round(food.carbs * adjustedScale),
+      fiber: Math.round((food.fiber || 0) * adjustedScale),
+      fats: Math.round(food.fat * adjustedScale)
+    };
+  }
+
+  formatAmount(amount, unit) {
+    // Round to practical increments
+    if (unit === 'g') {
+      return `${Math.round(amount / 5) * 5}g`;
+    } else if (unit === 'oz') {
+      return `${(Math.round(amount * 2) / 2).toFixed(1)}oz`;
+    } else if (unit === 'cup') {
+      return `${(Math.round(amount * 4) / 4).toFixed(2)} cup`;
+    }
+    return `${Math.round(amount)} ${unit}`;
+  }
+
+  runPrecisionAdjustmentEngine(meals, targets, trainingAnalysis) {
+    const MAX_CYCLES = 8;
+    
+    for (let cycle = 0; cycle < MAX_CYCLES; cycle++) {
+      const currentTotals = this.recalculateFromComponents({ meals });
+      
+      const gaps = {
+        protein: targets.protein - currentTotals.protein,
+        carbSurplus: currentTotals.carbs - targets.hierarchical.carb_range.max,
+        carbDeficit: targets.hierarchical.carb_range.min - currentTotals.carbs,
+        fiber: targets.hierarchical.fiber_range.min - currentTotals.fiber,
+        calories: targets.calories - currentTotals.calories
+      };
+      
+      // Priority adjustments
+      if (Math.abs(gaps.protein) > this.PROTEIN_TOLERANCE) {
+        this.adjustProtein(meals, gaps.protein);
+        continue;
+      }
+      
+      if (gaps.carbSurplus > this.CARB_TOLERANCE) {
+        this.adjustCarbsDown(meals, gaps.carbSurplus);
+        continue;
+      }
+      
+      if (gaps.carbDeficit > this.CARB_TOLERANCE) {
+        this.adjustCarbsUp(meals, gaps.carbDeficit, trainingAnalysis);
+        continue;
+      }
+      
+      if (gaps.fiber > this.FIBER_TOLERANCE) {
+        this.adjustFiber(meals, gaps.fiber);
+        continue;
+      }
+      
+      if (Math.abs(gaps.calories) > this.CALORIE_TOLERANCE) {
+        this.adjustCalories(meals, gaps.calories);
+        continue;
+      }
+      
+      // All targets met
+      break;
+    }
+    
+    // Final recalculation
+    meals.forEach(meal => {
+      meal.totals = this.recalculateFromComponents({ meals: [meal] });
+    });
+    
+    return meals;
+  }
+
+  recalculateFromComponents(components) {
+    const totals = { calories: 0, protein: 0, carbs: 0, fiber: 0, fats: 0 };
+    
+    if (components.meals) {
+      components.meals.forEach(meal => {
+        if (meal.components) {
+          // Add protein
+          if (meal.components.protein) {
+            this.addToTotals(totals, meal.components.protein);
+          }
+          // Add carbs
+          if (meal.components.carbs) {
+            this.addToTotals(totals, meal.components.carbs);
+          }
+          // Add vegetables
+          if (meal.components.vegetables) {
+            meal.components.vegetables.forEach(veg => this.addToTotals(totals, veg));
+          }
+          // Add fats
+          if (meal.components.fats) {
+            this.addToTotals(totals, meal.components.fats);
+          }
+          // Add extras
+          if (meal.components.extras) {
+            meal.components.extras.forEach(extra => this.addToTotals(totals, extra));
+          }
+        }
+      });
+    }
+    
+    return totals;
+  }
+
+  addToTotals(totals, item) {
+    if (item) {
+      totals.calories += item.calories || 0;
+      totals.protein += item.protein || 0;
+      totals.carbs += item.carbs || 0;
+      totals.fiber += item.fiber || 0;
+      totals.fats += item.fats || 0;
+    }
+  }
+
+  adjustProtein(meals, gap) {
+    const mealToAdjust = meals.find(m => m.components.protein);
+    if (!mealToAdjust) return;
+    
+    const currentProtein = mealToAdjust.components.protein;
+    const targetProtein = currentProtein.protein + gap;
+    const scale = targetProtein / currentProtein.protein;
+    
+    mealToAdjust.components.protein = this.scaleFood(currentProtein, scale);
+  }
+
+  adjustCarbsDown(meals, surplus) {
+    const mealToAdjust = meals
+      .filter(m => m.components.carbs)
+      .sort((a, b) => b.components.carbs.carbs - a.components.carbs.carbs)[0];
+    
+    if (!mealToAdjust) return;
+    
+    const currentCarbs = mealToAdjust.components.carbs;
+    const targetCarbs = Math.max(20, currentCarbs.carbs - surplus);
+    const scale = targetCarbs / currentCarbs.carbs;
+    
+    mealToAdjust.components.carbs = this.scaleFood(currentCarbs, scale);
+  }
+
+  adjustCarbsUp(meals, deficit, trainingAnalysis) {
+    // Prefer adding carbs to meals around training
+    const mealToAdjust = meals.find(m => 
+      m.carbFocus === 'high' && m.components.carbs
+    ) || meals.find(m => m.components.carbs);
+    
+    if (!mealToAdjust) return;
+    
+    const currentCarbs = mealToAdjust.components.carbs;
+    const targetCarbs = currentCarbs.carbs + deficit;
+    const scale = targetCarbs / currentCarbs.carbs;
+    
+    mealToAdjust.components.carbs = this.scaleFood(currentCarbs, scale);
+  }
+
+  adjustFiber(meals, deficit) {
+    // Add psyllium husk to last meal
+    const lastMeal = meals[meals.length - 1];
+    if (!lastMeal) return;
+    
+    const tspNeeded = Math.ceil(deficit / 5);
+    const psyllium = {
+      name: 'Psyllium Husk',
+      amount: `${tspNeeded} tsp`,
+      calories: tspNeeded * 10,
+      protein: 0,
+      carbs: 0,
+      fiber: tspNeeded * 5,
+      fats: 0
+    };
+    
+    if (!lastMeal.components.extras) {
+      lastMeal.components.extras = [];
+    }
+    lastMeal.components.extras.push(psyllium);
+  }
+
+  adjustCalories(meals, gap) {
+    // Use fats for calorie adjustment
+    const fatAdjustment = gap / 9;
+    const mealToAdjust = meals.find(m => m.type !== 'breakfast') || meals[0];
+    
+    if (!mealToAdjust.components.fats) {
+      mealToAdjust.components.fats = {
+        name: 'Extra Virgin Olive Oil',
+        amount: '0 tsp',
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fiber: 0,
+        fats: 0
+      };
+    }
+    
+    const currentFat = mealToAdjust.components.fats;
+    const newFatGrams = Math.max(0, currentFat.fats + fatAdjustment);
+    
+    if (newFatGrams === 0) {
+      mealToAdjust.components.fats = null;
+    } else {
+      const tsp = Math.round(newFatGrams / 4.5);
+      mealToAdjust.components.fats = {
+        name: currentFat.name,
+        amount: `${tsp} tsp`,
+        calories: Math.round(newFatGrams * 9),
+        protein: 0,
+        carbs: 0,
+        fiber: 0,
+        fats: Math.round(newFatGrams)
+      };
+    }
+  }
 }
 
 // HTML Generator with Interactive Mobile-First Design
@@ -2393,9 +2797,16 @@ function buildPersonalizedNutritionPlan(targets, userData) {
       supplementsKeys: supplementsData ? Object.keys(supplementsData) : null
     });
     try {
-      return generateInteractiveHTML(meals, mealTargets, userData, postWorkout, coffee, energyDrinks, snacks, alcohol, supplementsData);
+      // Add training analysis and cooking preferences to userData
+      const enhancedUserData = {
+        ...userData,
+        trainingAnalysis: result.trainingAnalysis,
+        cookingPreferences: result.cookingPreferences
+      };
+      return generateInteractiveHTML(meals, mealTargets, enhancedUserData, postWorkout, coffee, energyDrinks, snacks, alcohol, supplementsData);
     } catch (error) {
-      console.error('❌ Error calling generateInteractiveHTML:', error);
+      console.error('❌ Error generating interactive HTML:', error);
+      console.error(error.stack);
       throw error;
     }
   }

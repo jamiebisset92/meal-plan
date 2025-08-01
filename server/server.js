@@ -60,6 +60,10 @@ app.get('/logo.jpg', (req, res) => {
 const planEditorRoutes = require('./api/plan-editor');
 app.use('/api', planEditorRoutes);
 
+// Import plan routes
+const planRoutes = require('./routes/plan-routes');
+app.use('/api', planRoutes);
+
 // Health check endpoint
 app.get('/', (req, res) => {
   res.json({ 
@@ -67,7 +71,8 @@ app.get('/', (req, res) => {
     version: '1.0',
     endpoints: {
       webhook: 'POST /webhook/typeform',
-      plan: 'GET /plans/:id'
+      plan: 'GET /plans/:id',
+      createPlan: 'POST /api/create-plan'
     }
   });
 });

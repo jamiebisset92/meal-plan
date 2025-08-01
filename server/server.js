@@ -19,6 +19,7 @@ const { calculateNutritionTargets } = require('../src/modules/Module-1-Calculati
 const { buildPersonalizedNutritionPlan } = require('../src/modules/Module-5-Meal-Plan');
 const EmailService = require('./email-service');
 const ReviewQueue = require('./review-queue');
+const SupabaseStorage = require('./services/supabase-storage');
 
 // Import authentication routes
 const authRoutes = require('./routes/auth-routes');
@@ -106,21 +107,16 @@ app.post('/webhook/typeform', async (req, res) => {
     console.log('🎯 Selected targets:', JSON.stringify(targets[dayType], null, 2));
     const mealPlanHTML = buildPersonalizedNutritionPlan(targets, userData);
     
-    // Step 3: Save to unique URL
+    // Step 3: Store in Supabase and generate unique URL
     const planId = generatePlanId(userData);
-    const fileName = `${planId}.html`;
-    const filePath = path.join(__dirname, 'public', 'plans', fileName);
     
-    // Ensure directory exists
-    await fs.mkdir(path.join(__dirname, 'public', 'plans'), { recursive: true });
-    
-    // Save the HTML file
-    await fs.writeFile(filePath, mealPlanHTML);
+    // Store meal plan in Supabase
+    await SupabaseStorage.storeMealPlan(planId, userData, mealPlanHTML);
     
     // Generate the access URL with custom domain
-    const planUrl = `${baseUrl}/plans/${fileName}`;
+    const planUrl = `${baseUrl}/plans/${planId}`;
     
-    console.log('✅ Meal plan generated:', planUrl);
+    console.log('✅ Meal plan generated and stored:', planUrl);
     
     // Add to review queue instead of sending immediately
     await reviewQueue.addToQueue({
@@ -147,19 +143,25 @@ app.post('/webhook/typeform', async (req, res) => {
   }
 });
 
-// Serve generated meal plans
-app.get('/plans/:fileName', async (req, res) => {
+// Serve generated meal plans from Supabase
+app.get('/plans/:planId', async (req, res) => {
   try {
-    const fileName = req.params.fileName;
-    const filePath = path.join(__dirname, 'public', 'plans', fileName);
+    const planId = req.params.planId;
     
-    // Check if file exists
-    await fs.access(filePath);
+    // Retrieve meal plan from Supabase
+    const planData = await SupabaseStorage.getMealPlan(planId);
     
-    // Serve the HTML file
-    res.sendFile(filePath);
+    if (!planData) {
+      return res.status(404).send('Meal plan not found');
+    }
+    
+    // Serve the HTML content
+    res.setHeader('Content-Type', 'text/html');
+    res.send(planData.html_content);
+    
   } catch (error) {
-    res.status(404).send('Meal plan not found');
+    console.error('❌ Error serving meal plan:', error);
+    res.status(500).send('Error loading meal plan');
   }
 });
 
